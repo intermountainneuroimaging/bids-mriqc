@@ -1,0 +1,156 @@
+#!/usr/bin/env python3
+
+import codecs
+import json
+import copy
+import os
+import os.path as op
+import sys
+import subprocess as sp
+import shutil
+import pprint
+import flywheel
+
+# Gear basics
+FLYWHEEL_BASE = '/flywheel/v0'
+MANIFEST_FILE = op.join(FLYWHEEL_BASE, 'manifest.json')
+CONFIG_FILE   = op.join(FLYWHEEL_BASE, 'config.json')
+INPUT_DIR     = op.join(FLYWHEEL_BASE, 'input')
+OUTPUT_DIR    = op.join(FLYWHEEL_BASE, 'output')
+COMMAND       = 'mriqc'
+RESULT        = 'derivatives'
+
+def Build_Params(context):
+    config = context.config
+    Params = {}
+    Params['i'] = context.get_input_path('Image')
+    # COMMAND will create the output directory and name it
+    # /flywheel/v0/output/RESULT
+    Params['o'] = op.join(OUTPUT_DIR, 'result')
+    for key in config.keys():
+        # Use only those boolean values that are True
+        if type(config[key]) == bool:
+            if config[key]:
+                Params[key] = True
+        else:
+            if len(key) == 1:
+                Params[key] = config[key]
+            else:
+                if config[key] != 0:  # if the key-value is zero, we skip and use the defaults
+                    Params[key] = config[key]
+    return Params
+
+def Validate_Params(Params,log):
+    """
+    Validate settings of the Parameters constructed.
+    Gives warnings for possible settings that could result in bad results.
+    Gives errors (and raises exceptions) for settings that are violations 
+    """
+
+    # Test for input existence
+    if not op.exists(Params['i']):
+        raise Exception('Input File Not Found')
+
+    # Tests for specific problems/interactions that can raise expections or log warnings
+    #if ('betfparam' in Params) and ('nononlinreg' in Params):
+    #    if(Params['betfparam']>0.0):
+    #        raise Exception('For betfparam values > zero, nonlinear registration is required.')
+
+    #if ('s' in Params.keys()):
+    #    if Params['s']==0:
+    #        log.warning('The value of ' + str(Params['s'] + ' for -s may cause a singular matrix'))
+
+def BuilCommandList(command, ParamList):
+    """
+    command is a list of prepared commands
+    ParamList is a dictionary of key:value pairs to be put into the command list as such ("-k value" or "--key=value")
+    """
+    print(ParamList)
+    for key in ParamList.keys():
+        # Single character command-line parameters are preceded by a single '-'
+        if len(key) == 1:
+            command.append('-' + key)
+            if len(str(ParamList[key]))!=0:
+                command.append(str(ParamList[key]))
+        # Multi-Character command-line parameters are preceded by a double '--'
+        else:
+            # If Param is boolean and true include, else exclude
+            if type(ParamList[key]) == bool:
+                if ParamList[key]:
+                    command.append('--' + key)
+            else:
+                # If Param not boolean, but without value include without value
+                # (e.g. '--key'), else include value (e.g. '--key=value')
+                if len(str(ParamList[key])) == 0:
+                    command.append('--' + key)
+                else:
+                    command.append('--' + key + '=' + str(ParamList[key]))
+    return command
+
+
+if __name__ == '__main__':
+    print('hello')
+    pp = pprint.PrettyPrinter(indent=4)
+    context = flywheel.GearContext()
+    pp.pprint(context)
+    config = context.config
+    pp.pprint(config)
+    print('Exiting early.')
+    sys.exit()
+    # Initialize Logging
+    context.log.name = 'flywheel/fsl-anat:0.1.7_5.0.9' # TODO get from manifest
+    context.init_logging()
+    context.log_config()
+
+    # grab environment for gear
+    with open('/tmp/gear_environ.json', 'r') as f:
+        environ = json.load(f)
+
+    # Execute in try except block
+    try:
+        # Build a parameter dictionary specific for COMMAND
+        params = Build_Params(context)
+        # Validate the COMMAND parameter dictionary
+        # Raises Exception on fail
+        Validate_Params(params,context.log)
+        # Build command-line string for subprocess to execute
+        command = [COMMAND]
+        command = BuilCommandList(command, params)
+        context.log.info('Command:'+' '.join(command))
+
+        result = sp.run(command, stdout=sp.PIPE, stderr=sp.PIPE,
+                        universal_newlines=True, env=environ)
+
+        context.log.info(result.returncode)
+        context.log.info(result.stdout)
+
+        if result.returncode != 0:
+            context.log.error('The command:\n ' +
+                  ' '.join(command) +
+                  '\nfailed. See log for debugging.')
+            context.log.error(result.stderr)
+            os.sys.exit(result.returncode)
+        else:
+            context.log.info("Commands successfully executed!")
+            os.sys.exit(0)
+
+    except Exception as e:
+        context.log.error(e)
+        context.log.error('Cannot execute commands.')
+        os.sys.exit(1)
+
+    finally:
+        # Cleanup, move all results to the output directory
+        # Unless otherwise specified, zip entire results and delete directory
+        os.chdir(OUTPUT_DIR)
+        #if the output/RESULT path exists, zip it regardless of exit status
+        if op.exists('/flywheel/v0/output/RESULT/'):
+            context.log.info('Zipping /flywheel/v0/output/RESULT/ directory.')
+            command1 = ['zip', 'results.anat.zip', 'RESULT']
+            result1 = sp.run(command1, stdout=sp.PIPE, stderr=sp.PIPE)
+            command2 = ['rm', '-rf', '/flywheel/v0/output/RESULT/']
+            result2 = sp.run(command2, stdout=sp.PIPE, stderr=sp.PIPE)
+        else:
+            context.log.info('No results directory, /flywheel/v0/output/RESULT, to zip.')
+
+# vi:set autoindent ts=4 sw=4 expandtab : See Vim, :help 'modeline'

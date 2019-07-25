@@ -24,12 +24,17 @@
     }
   },
   "config": {
-    "run id": {
+    "participant_label": {
+      "description": "PARTICIPANT_LABEL [PARTICIPANT_LABEL ...]]",
+      "type": "string",
+      "default": ""
+    },
+    "run-id": {
       "description": "[RUN_ID [RUN_ID ...]]",
       "type": "string",
       "default": ""
     },
-    "task id": {
+    "task-id": {
       "description": "[TASK_ID [TASK_ID ...]]",
       "type": "string",
       "default": ""
@@ -50,8 +55,8 @@
       "type": "string",
       "default": ""
     },
-    "work_dir": {
-      "description": "working directory",
+    "work-dir": {
+      "description": "change the folder to store intermediate results",
       "type": "string",
       "default": ""
     },
@@ -123,7 +128,13 @@
     },
     "mem_gb": {
       "description": "available total memory",
-      "type": "integer"
+      "type": "integer",
+      "default": 0
+    },
+    "testing": {
+      "description": "use testing settings for a minimal footprint",
+      "type": "boolean",
+      "default": false
     },
     "float32": {
       "description": "Cast the input data to float32 if it’s represented in higher precision (saves space and improves perfomance)",
@@ -152,15 +163,18 @@
     },
     "fd_thres": {
       "description": "motion threshold for FD computation",
-      "type": "float"
+      "type": "number",
+      "default": 0.2
     },
     "ants-nthreads": {
       "description": "number of threads that will be set in ANTs processes",
-      "type": "integer"
+      "type": "integer",
+      "default": 1
     },
     "ants-float": {
       "description": "number of threads that will be set in ANTs processes",
-      "type": "integer"
+      "type": "boolean",
+      "default": false
     },
     "ants-settings": {
       "description": "path to JSON file with settings for ANTS",
@@ -184,7 +198,8 @@
     },
     "stop-idx": {
       "description": "Final volume in functional timeseries that should be considered for preprocessing",
-      "type": "integer"
+      "type": "integer",
+      "default": 1
     },
     "correct-slice-timing": {
       "description": "Perform slice timing correction",

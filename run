@@ -91,15 +91,13 @@ def BuilCommandList(command, ParamList):
 if __name__ == '__main__':
     pp = pprint.PrettyPrinter(indent=4)
     context = flywheel.GearContext()
-    print('context')
-    pp.pprint(context)
     config = context.config
-    print('config')
-    pp.pprint(config)
-    print('Exiting early.')
-    sys.exit()
     # Initialize Logging
-    context.log.name = 'flywheel/fsl-anat:0.1.7_5.0.9' # TODO get from manifest
+    with open(MANIFEST_FILE, 'r') as f:
+        manifest = json.load(f)
+    #pp.pprint(manifest)
+    context.log.name = manifest['custom']['gear-builder']['image']
+    #print(f'context.log.name {context.log.name}')
     context.init_logging()
     context.log_config()
 
@@ -153,5 +151,8 @@ if __name__ == '__main__':
             result2 = sp.run(command2, stdout=sp.PIPE, stderr=sp.PIPE)
         else:
             context.log.info('No results directory, /flywheel/v0/output/RESULT, to zip.')
+
+#print('Exiting early.')
+#sys.exit()
 
 # vi:set autoindent ts=4 sw=4 expandtab : See Vim, :help 'modeline'

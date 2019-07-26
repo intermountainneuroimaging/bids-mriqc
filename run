@@ -89,11 +89,12 @@ def BuilCommandList(command, ParamList):
 
 
 if __name__ == '__main__':
-    print('hello')
     pp = pprint.PrettyPrinter(indent=4)
     context = flywheel.GearContext()
+    print('context')
     pp.pprint(context)
     config = context.config
+    print('config')
     pp.pprint(config)
     print('Exiting early.')
     sys.exit()

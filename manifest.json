@@ -1,7 +1,7 @@
 {
   "name": "bids-mriqc",
   "label": "MRIQC: Automatic prediction of quality and visual reporting of MRI scans",
-  "description": "MRIQC extracts no-reference IQMs (image quality metrics) from structural (T1w and T2w) and functional MRI (magnetic resonance imaging) data.",
+  "description": "MRIQC (v0.15.0) extracts no-reference IQMs (image quality metrics) from structural (T1w and T2w) and functional MRI (magnetic resonance imaging) data.",
   "author": "Poldrack Lab, Stanford University",
   "cite": "Esteban O, Birman D, Schaer M, Koyejo OO, Poldrack RA, Gorgolewski KJ; MRIQC: Advancing the Automatic Prediction of Image Quality in MRI from Unseen Sites; PLOS ONE 12(9):e0184661; doi:10.1371/journal.pone.0184661.. FOR MORE INFORMATION SEE: https://mriqc.readthedocs.io/en/stable/about.html.",
   "maintainer": "Flywheel <support@flywheel.io>",
@@ -20,7 +20,8 @@
   },
   "inputs": {
     "api_key": {
-      "base": "api-key"
+      "base": "api-key",
+      "read-only": true
     }
   },
   "config": {
@@ -206,5 +207,28 @@
       "type": "boolean",
       "default": false
     }
-  }
+  },
+        "environment": {
+                "AFNI_IMSAVE_WARNINGS": "NO",
+                "AFNI_MODELPATH": "/opt/afni/models",
+                "AFNI_PLUGINPATH": "/opt/afni/plugins",
+                "AFNI_TTATLAS_DATASET": "/opt/afni/atlases",
+                "ANTSPATH": "/usr/lib/ants",
+                "CPATH": "/usr/local/miniconda/include/:",
+                "FSLDIR": "/usr/share/fsl/5.0",
+                "FSLMULTIFILEQUIT": "TRUE",
+                "FSLOUTPUTTYPE": "NIFTI_GZ",
+                "FSLTCLSH": "/usr/bin/tclsh",
+                "FSLWISH": "/usr/bin/wish",
+                "HOME": "/home/bidsapp",
+                "LANG": "C.UTF-8",
+                "LC_ALL": "C.UTF-8",
+                "LD_LIBRARY_PATH": "/usr/lib/fsl/5.0:",
+                "MKL_NUM_THREADS": "1",
+                "OMP_NUM_THREADS": "1",
+                "PATH": "/usr/local/miniconda/bin:/opt/afni:/usr/lib/ants:/usr/lib/fsl/5.0:/usr/lib/afni/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
+                "POSSUMDIR": "/usr/share/fsl/5.0",
+                "PYTHONNOUSERSITE": "1",
+                "TEMPLATEFLOW_HOME": "/opt/templateflow"
+        }
 }

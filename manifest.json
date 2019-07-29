@@ -7,19 +7,19 @@
   "maintainer": "Flywheel <support@flywheel.io>",
   "source": "https://github.com/flywheel-apps/bids-mriqc",
   "url": "https://mriqc.readthedocs.io/en/stable/about.html",
-  "version": "0.1.0_0.15.0",
+  "version": "0.1.2_0.15.0",
   "custom": {
-    "docker-image": "flywheel/bids-mriqc:0.1.0_0.15.0"
+    "docker-image": "flywheel/bids-mriqc:0.1.2_0.15.0"
   },
   "license": "BSD-3-Clause",
   "custom": {
     "gear-builder": {
       "category": "analysis",
-      "image": "flywheel/bids-mriqc:0.1.0_0.15.0"
+      "image": "flywheel/bids-mriqc:0.1.2_0.15.0"
     }
   },
   "inputs": {
-    "api_key": {
+    "key": {
       "base": "api-key",
       "read-only": true
     }
@@ -28,17 +28,17 @@
     "participant_label": {
       "description": "PARTICIPANT_LABEL [PARTICIPANT_LABEL ...]]",
       "type": "string",
-      "default": ""
+      "optional": true
     },
     "run-id": {
       "description": "[RUN_ID [RUN_ID ...]]",
       "type": "string",
-      "default": ""
+      "optional": true
     },
     "task-id": {
       "description": "[TASK_ID [TASK_ID ...]]",
       "type": "string",
-      "default": ""
+      "optional": true
     },
     "modalities": {
       "description": "{T1w,bold,T2w} [{T1w,bold,T2w} ...]",
@@ -49,17 +49,17 @@
         "bold",
         "T2w"
       ],
-      "default": ""
+      "optional": true
     },
     "dsname": {
       "description": "a dataset name",
       "type": "string",
-      "default": ""
+      "optional": true
     },
     "work-dir": {
       "description": "change the folder to store intermediate results",
       "type": "string",
-      "default": ""
+      "optional": true
     },
     "verbose-reports": {
       "description": "increase verbosity of report",
@@ -84,17 +84,17 @@
     "use-plugin": {
       "description": "nipype plugin configuration file",
       "type": "string",
-      "default": ""
+      "optional": true
     },
     "no-sub": {
       "description": "Turn off submission of anonymized quality metrics to MRIQC’s metrics repository",
       "type": "boolean",
-      "default": false
+      "optional": true
     },
     "email": {
       "description": "Email address to include with quality metric submission",
       "type": "string",
-      "default": ""
+      "optional": true
     },
     "verbose": {
       "description": "increases log verbosity for each occurence, debug level is -vvv",
@@ -105,17 +105,17 @@
         "vv",
         "vvv"
       ],
-      "default": ""
+      "optional": true
     },
     "webapi-url": {
       "description": "IP address where the MRIQC WebAPI is listening",
       "type": "string",
-      "default": ""
+      "optional": true
     },
     "webapi-port": {
       "description": "port where the MRIQC WebAPI is listening",
       "type": "string",
-      "default": ""
+      "optional": true
     },
     "upload-strict": {
       "description": "upload will fail if if upload is strict",
@@ -180,7 +180,7 @@
     "ants-settings": {
       "description": "path to JSON file with settings for ANTS",
       "type": "string",
-      "default": ""
+      "optional": true
     },
     "deoblique": {
       "description": "Deoblique the functional scans during head motion correction preprocessing",
@@ -195,12 +195,12 @@
     "start-idx": {
       "description": "Initial volume in functional timeseries that should be considered for preprocessing",
       "type": "integer",
-      "default": 1
+      "optional": true
     },
     "stop-idx": {
       "description": "Final volume in functional timeseries that should be considered for preprocessing",
       "type": "integer",
-      "default": 1
+      "optional": true
     },
     "correct-slice-timing": {
       "description": "Perform slice timing correction",

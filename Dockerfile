@@ -19,12 +19,6 @@ WORKDIR ${FLYWHEEL}
 COPY run ${FLYWHEEL}/run
 COPY manifest.json ${FLYWHEEL}/manifest.json
 
-# ENV preservation for Flywheel Engine
-RUN env -u HOSTNAME -u PWD | \
-  awk -F = '{ print "export " $1 "=\"" $2 "\"" }' > ${FLYWHEEL}/docker-env.sh
-
-RUN echo "export XVFB_WRAPPER_SOFT_FILE_LOCK=1" >> ${FLYWHEEL}/docker-env.sh
-
 # Configure entrypoint
 RUN chmod a+x /flywheel/v0/run
 ENTRYPOINT ["/flywheel/v0/run"]

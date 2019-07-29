@@ -48,8 +48,8 @@ def Validate_Params(Params,log):
     """
 
     # Test for input existence
-    if not op.exists(Params['i']):
-        raise Exception('Input File Not Found')
+    #if not op.exists(Params['i']):
+    #    raise Exception('Input File Not Found')
 
     # Tests for specific problems/interactions that can raise expections or log warnings
     #if ('betfparam' in Params) and ('nononlinreg' in Params):
@@ -90,6 +90,8 @@ def BuilCommandList(command, ParamList):
 
 if __name__ == '__main__':
     pp = pprint.PrettyPrinter(indent=4)
+    os.system('pwd')
+    os.system('ls')
     context = flywheel.GearContext()
     config = context.config
     # Initialize Logging

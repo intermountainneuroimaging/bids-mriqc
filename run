@@ -23,10 +23,6 @@ RESULT        = 'derivatives'
 def Build_Params(context):
     config = context.config
     Params = {}
-    Params['i'] = context.get_input_path('Image')
-    # COMMAND will create the output directory and name it
-    # /flywheel/v0/output/RESULT
-    Params['o'] = op.join(OUTPUT_DIR, 'result')
     for key in config.keys():
         # Use only those boolean values that are True
         if type(config[key]) == bool:
@@ -107,8 +103,32 @@ if __name__ == '__main__':
     with open('/tmp/gear_environ.json', 'r') as f:
         environ = json.load(f)
 
-    # Execute in try except block
     try:
+        # Download all files from the session in BIDS format
+        # bids_path will point to the BIDS folder
+        bids_path = context.download_session_bids()
+
+        # make sure dataset_description.json exists
+        required_file = bids_path+'/dataset_description.json'
+        if not op.exists(required_file):
+            context.log.info(required_file+' is missing')
+            the_stuff = {
+                "Acknowledgements": "",
+                "Authors": [],
+                "BIDSVersion": "1.2.0",
+                "DatasetDOI": "",
+                "Funding": "",
+                "HowToAcknowledge": "",
+                "License": "",
+                "Name": "tome",
+                "ReferencesAndLinks": [],
+                "template": "project"
+            }
+            with open(required_file, 'w') as outfile:
+                json.dump(the_stuff, outfile)
+        else:
+            context.log.info(required_file+' exists')
+
         # Build a parameter dictionary specific for COMMAND
         params = Build_Params(context)
         # Validate the COMMAND parameter dictionary
@@ -117,6 +137,10 @@ if __name__ == '__main__':
         # Build command-line string for subprocess to execute
         command = [COMMAND]
         command = BuilCommandList(command, params)
+        # add positional arguments
+        command.append(bids_path)
+        command.append(OUTPUT_DIR)
+        command.append('participant')
         context.log.info('Command:'+' '.join(command))
 
         result = sp.run(command, stdout=sp.PIPE, stderr=sp.PIPE,

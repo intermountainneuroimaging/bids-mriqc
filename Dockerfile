@@ -9,6 +9,7 @@ MAINTAINER Flywheel <support@flywheel.io>
 # Save docker environ
 RUN python -c 'import os, json; f = open("/tmp/gear_environ.json", "w"); json.dump(dict(os.environ), f)' 
 RUN pip install flywheel-sdk
+RUN pip install flywheel-bids
 #############################################
 
 # Make directory for flywheel spec (v0)

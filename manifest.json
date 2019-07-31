@@ -7,15 +7,15 @@
   "maintainer": "Flywheel <support@flywheel.io>",
   "source": "https://github.com/flywheel-apps/bids-mriqc",
   "url": "https://mriqc.readthedocs.io/en/stable/about.html",
-  "version": "0.1.2_0.15.0",
+  "version": "0.1.4_0.15.0",
   "custom": {
-    "docker-image": "flywheel/bids-mriqc:0.1.2_0.15.0"
+    "docker-image": "flywheel/bids-mriqc:0.1.4_0.15.0"
   },
   "license": "BSD-3-Clause",
   "custom": {
     "gear-builder": {
       "category": "analysis",
-      "image": "flywheel/bids-mriqc:0.1.2_0.15.0"
+      "image": "flywheel/bids-mriqc:0.1.4_0.15.0"
     }
   },
   "inputs": {

@@ -1,21 +1,21 @@
 {
   "name": "bids-mriqc",
-  "label": "MRIQC: Automatic prediction of quality and visual reporting of MRI scans",
-  "description": "MRIQC (v0.15.0) extracts no-reference IQMs (image quality metrics) from structural (T1w and T2w) and functional MRI (magnetic resonance imaging) data.",
+  "label": "BIDS-APP: MRIQC: Automatic prediction of quality and visual reporting of MRI scans in BIDS format",
+  "description": "MRIQC (v0.15.1) extracts no-reference IQMs (image quality metrics) from structural (T1w and T2w) and functional MRI (magnetic resonance imaging) data.",
   "author": "Poldrack Lab, Stanford University",
   "cite": "Esteban O, Birman D, Schaer M, Koyejo OO, Poldrack RA, Gorgolewski KJ; MRIQC: Advancing the Automatic Prediction of Image Quality in MRI from Unseen Sites; PLOS ONE 12(9):e0184661; doi:10.1371/journal.pone.0184661.. FOR MORE INFORMATION SEE: https://mriqc.readthedocs.io/en/stable/about.html.",
   "maintainer": "Flywheel <support@flywheel.io>",
   "source": "https://github.com/flywheel-apps/bids-mriqc",
   "url": "https://mriqc.readthedocs.io/en/stable/about.html",
-  "version": "0.1.4_0.15.0",
+  "version": "0.1.6_0.15.1",
   "custom": {
-    "docker-image": "flywheel/bids-mriqc:0.1.4_0.15.0"
+    "docker-image": "flywheel/bids-mriqc:0.1.6_0.15.1"
   },
   "license": "BSD-3-Clause",
   "custom": {
     "gear-builder": {
       "category": "analysis",
-      "image": "flywheel/bids-mriqc:0.1.4_0.15.0"
+      "image": "flywheel/bids-mriqc:0.1.6_0.15.1"
     }
   },
   "inputs": {
@@ -25,6 +25,16 @@
     }
   },
   "config": {
+    "run-bids-validation": {
+      "description": "Run BIDS validation before mriqc",
+      "type": "boolean",
+      "default": true
+    },
+    "abort-on-bids-error": {
+      "description": "Will not run mriqc if there are any BIDS errors detected",
+      "type": "boolean",
+      "default": false
+    },
     "participant_label": {
       "description": "PARTICIPANT_LABEL [PARTICIPANT_LABEL ...]]",
       "type": "string",

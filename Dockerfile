@@ -1,5 +1,5 @@
 # Use the latest Python 3 docker image
-FROM poldracklab/mriqc:latest
+FROM poldracklab/mriqc:0.15.1
 
 MAINTAINER Flywheel <support@flywheel.io>
 
@@ -10,6 +10,7 @@ MAINTAINER Flywheel <support@flywheel.io>
 RUN python -c 'import os, json; f = open("/tmp/gear_environ.json", "w"); json.dump(dict(os.environ), f)' 
 RUN pip install flywheel-sdk
 RUN pip install flywheel-bids
+RUN npm install -g bids-validator
 #############################################
 
 # Make directory for flywheel spec (v0)

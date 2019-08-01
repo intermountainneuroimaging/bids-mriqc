@@ -61,7 +61,6 @@ def BuilCommandList(command, ParamList):
     command is a list of prepared commands
     ParamList is a dictionary of key:value pairs to be put into the command list as such ("-k value" or "--key=value")
     """
-    print(ParamList)
     for key in ParamList.keys():
         # Single character command-line parameters are preceded by a single '-'
         if len(key) == 1:
@@ -81,21 +80,19 @@ def BuilCommandList(command, ParamList):
                     command.append('--' + key)
                 else:
                     command.append('--' + key + '=' + str(ParamList[key]))
+        if key == 'verbose': # handle a 'count' argparse argument
+            # replace "--verbose=vvv' with '-vvv'
+            command[-1] = '-'+ParamList[key]
     return command
 
 
 if __name__ == '__main__':
-    pp = pprint.PrettyPrinter(indent=4)
-    os.system('pwd')
-    os.system('ls')
     context = flywheel.GearContext()
     config = context.config
     # Initialize Logging
     with open(MANIFEST_FILE, 'r') as f:
         manifest = json.load(f)
-    #pp.pprint(manifest)
     context.log.name = manifest['custom']['gear-builder']['image']
-    #print(f'context.log.name {context.log.name}')
     context.init_logging()
     context.log_config()
 
@@ -106,28 +103,62 @@ if __name__ == '__main__':
     try:
         # Download all files from the session in BIDS format
         # bids_path will point to the BIDS folder
-        bids_path = context.download_session_bids()
+        if True: # Development hack
+            bids_path = context.download_session_bids()
+            context.log.info(f'BIDS was downloaded into {bids_path}')
 
-        # make sure dataset_description.json exists
-        required_file = bids_path+'/dataset_description.json'
-        if not op.exists(required_file):
-            context.log.info(required_file+' is missing')
-            the_stuff = {
-                "Acknowledgements": "",
-                "Authors": [],
-                "BIDSVersion": "1.2.0",
-                "DatasetDOI": "",
-                "Funding": "",
-                "HowToAcknowledge": "",
-                "License": "",
-                "Name": "tome",
-                "ReferencesAndLinks": [],
-                "template": "project"
-            }
-            with open(required_file, 'w') as outfile:
-                json.dump(the_stuff, outfile)
+            # make sure dataset_description.json exists
+            required_file = bids_path+'/dataset_description.json'
+            if not op.exists(required_file):
+                context.log.info(required_file+' is missing')
+                the_stuff = {
+                    "Acknowledgements": "",
+                    "Authors": [],
+                    "BIDSVersion": "1.2.0",
+                    "DatasetDOI": "",
+                    "Funding": "",
+                    "HowToAcknowledge": "",
+                    "License": "",
+                    "Name": "tome",
+                    "ReferencesAndLinks": [],
+                    "template": "project"
+                }
+                with open(required_file, 'w') as outfile:
+                    json.dump(the_stuff, outfile)
+            else:
+                context.log.info(required_file+' exists')
         else:
-            context.log.info(required_file+' exists')
+            bids_path = INPUT_DIR+'tome'
+
+        if config['run-bids-validation']:
+            # Run BIDS Validator on bids_path
+            command = ['bids-validator','--verbose','--json','input/tome']
+            context.log.info('Command:'+' '.join(command))
+            result = sp.run(command, stdout=sp.PIPE, stderr=sp.PIPE,
+                            universal_newlines=True, env=environ)
+            context.log.info('bids-validator return code: '+str(result.returncode))
+            bids_output = json.loads(result.stdout)
+            context.log.info('\n\nValid BIDS files summary:\n\n'+pprint.pformat(bids_output['summary'],indent=8)+'\n')
+            num_errors = len(bids_output['issues']['errors'])
+            for err in bids_output['issues']['errors']:
+                err_msg = err['reason']+'\n'
+                for ff in err['files']:
+                    err_msg += f'       {ff["file"]["relativePath"]}\n'
+                context.log.error(err_msg)
+            for warn in bids_output['issues']['warnings']:
+                warn_msg = warn['reason']+'\n'
+                for ff in warn['files']:
+                    if ff["file"]:
+                        warn_msg += f'       {ff["file"]["relativePath"]}\n'
+                context.log.warning(warn_msg)
+
+            if config['abort-on-bids-error']:
+                context.log.critical(f'{num_errors} BIDS validation errors were detected: NOT running mriqc.')
+                os.sys.exit(0)
+
+        # Don't pass these arguments to mriqc
+        del config['run-bids-validation']
+        del config['abort-on-bids-error']
 
         # Build a parameter dictionary specific for COMMAND
         params = Build_Params(context)
@@ -143,6 +174,7 @@ if __name__ == '__main__':
         command.append('participant')
         context.log.info('Command:'+' '.join(command))
 
+        #command = ['mriqc','--help'] # Development hack
         result = sp.run(command, stdout=sp.PIPE, stderr=sp.PIPE,
                         universal_newlines=True, env=environ)
 
@@ -160,8 +192,8 @@ if __name__ == '__main__':
             os.sys.exit(0)
 
     except Exception as e:
-        context.log.error(e)
-        context.log.error('Cannot execute commands.')
+        #context.log.error(e)
+        context.log.exception('Cannot execute commands.')
         os.sys.exit(1)
 
     finally:
@@ -178,7 +210,7 @@ if __name__ == '__main__':
         else:
             context.log.info('No results directory, /flywheel/v0/output/RESULT, to zip.')
 
-#print('Exiting early.')
-#sys.exit()
-
+#context.log.info("Exiting early.")
+#os.sys.exit(0)
+        
 # vi:set autoindent ts=4 sw=4 expandtab : See Vim, :help 'modeline'

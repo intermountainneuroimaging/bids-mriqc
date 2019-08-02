@@ -22,8 +22,108 @@ OUTPUT_DIR    = op.join(FLYWHEEL_BASE, 'output')
 COMMAND       = 'mriqc'
 RESULT        = 'derivatives'
 
-def Build_Params(context):
-    config = context.config
+
+# Set log name using versioned gear name
+with open(MANIFEST_FILE, 'r') as f:
+    manifest = json.load(f)
+log = logging.getLogger(manifest['custom']['gear-builder']['image'])
+
+
+def download_bids(context):
+    """ Download all files from the session in BIDS format
+        bids_path will point to the local BIDS folder
+        This creates a simiple dataset_description.json if
+        one did not get downloaded.
+    """
+
+    bids_path = context.download_session_bids()
+
+    # If BIDS was already downloaded, don't do it again
+    # (this saves time when developing locally)
+    if not op.isdir(bids_path):
+
+        # make sure dataset_description.json exists
+        required_file = bids_path+'/dataset_description.json'
+        if not op.exists(required_file):
+            log.info(f' Creating missing {required_file}.')
+            the_stuff = {
+                "Acknowledgements": "",
+                "Authors": [],
+                "BIDSVersion": "1.2.0",
+                "DatasetDOI": "",
+                "Funding": "",
+                "HowToAcknowledge": "",
+                "License": "",
+                "Name": "tome",
+                "ReferencesAndLinks": [],
+                "template": "project"
+            }
+            with open(required_file, 'w') as outfile:
+                json.dump(the_stuff, outfile)
+        else:
+            log.info(f'{required_file} exists.')
+
+        log.info(f' BIDS was downloaded into {bids_path}')
+
+    else:
+        log.info(f' Using existing BIDS path {bids_path}')
+
+    return bids_path
+
+
+def run_bids_validation(config, bids_path, environ):
+    """ Run BIDS Validator on bids_path
+        Install BIDS Validator into container with: 
+            RUN npm install -g bids-validator
+        This prints a summary of files that are valid,
+        and then lists errors and warnings.
+        Then it exits if abort-on-bids-error is set and
+        if there are any errors.
+        The config MUST contain both of these:
+            run-bids-validation
+            abort-on-bids-error
+    """
+
+    if config['run-bids-validation']:
+
+        command = ['bids-validator','--verbose','--json',bids_path]
+        log.info(' Command:'+' '.join(command))
+        result = sp.run(command, stdout=sp.PIPE, stderr=sp.PIPE,
+                        universal_newlines=True, env=environ)
+        log.info(' bids-validator return code: '+str(result.returncode))
+        #log.info(result.stdout)
+        bids_output = json.loads(result.stdout)
+
+        log.info(' bids-validator results:\nValid BIDS files summary:\n' + \
+                 pprint.pformat(bids_output['summary'],indent=8)+'\n')
+
+        num_bids_errors = len(bids_output['issues']['errors'])
+
+        for err in bids_output['issues']['errors']:
+            err_msg = err['reason']+'\n'
+            for ff in err['files']:
+                err_msg += f'       {ff["file"]["relativePath"]}\n'
+            log.error(' '+err_msg)
+
+        for warn in bids_output['issues']['warnings']:
+            warn_msg = warn['reason']+'\n'
+            for ff in warn['files']:
+                if ff["file"]:
+                    warn_msg += f'       {ff["file"]["relativePath"]}\n'
+            log.warning(' '+warn_msg)
+
+        if config['abort-on-bids-error']:
+            if num_bids_errors > 0:
+                log.critical(f' {num_bids_errors} BIDS validation errors '+\
+                              'were detected: NOT running mriqc.')
+                os.sys.exit(1)
+
+    # Don't pass these arguments on, the are used up
+    del config['run-bids-validation']
+    del config['abort-on-bids-error']
+
+
+def Build_Params(config):
     Params = {}
     for key in config.keys():
         # Use only those boolean values that are True
@@ -34,11 +134,12 @@ def Build_Params(context):
             if len(key) == 1:
                 Params[key] = config[key]
             else:
-                if config[key] != 0:  # if the key-value is zero, we skip and use the defaults
+                if config[key] != 0:  # if zero, skip and use defaults
                     Params[key] = config[key]
     return Params
 
-def Validate_Params(Params,log):
+
+def Validate_Params(Params):
     """
     Validate settings of the Parameters constructed.
     Gives warnings for possible settings that could result in bad results.
@@ -56,13 +157,17 @@ def Validate_Params(Params,log):
 
     #if ('s' in Params.keys()):
     #    if Params['s']==0:
-    #        log.warning('The value of ' + str(Params['s'] + ' for -s may cause a singular matrix'))
+    #        log.warning(' The value of ' + str(Params['s'] + ' for -s may cause a singular matrix'))
 
-def BuilCommandList(command, ParamList):
+
+def BuilCommandList(command, ParamList, bids_path):
     """
     command is a list of prepared commands
     ParamList is a dictionary of key:value pairs to be put into the command list as such ("-k value" or "--key=value")
     """
+
+    command = [COMMAND]
+
     for key in ParamList.keys():
         # Single character command-line parameters are preceded by a single '-'
         if len(key) == 1:
@@ -85,132 +190,61 @@ def BuilCommandList(command, ParamList):
         if key == 'verbose': # handle a 'count' argparse argument
             # replace "--verbose=vvv' with '-vvv'
             command[-1] = '-'+ParamList[key]
+
+    # add positional arguments
+    command.append(bids_path)
+    command.append(OUTPUT_DIR)
+    command.append('participant')
+    log.info(' Command:'+' '.join(command))
+
     return command
 
 
-if __name__ == '__main__':
-    context = flywheel.GearContext()
+def main(context):
+
     config = context.config
 
-    # Initialize Logging
-    handler = logging.StreamHandler(stream=sys.stdout)
-
-    formatter = logging.Formatter(
-                fmt='%(levelname)s - %(name)-8s - %(asctime)s -  %(message)s',
-                datefmt='%Y-%m-%d %H:%M:%S')
-    handler.setFormatter(formatter)
-
-    with open(MANIFEST_FILE, 'r') as f:
-        manifest = json.load(f)
-    logger = logging.getLogger(manifest['custom']['gear-builder']['image'])
-
-    logger.addHandler(handler)
-    context.log = logger
-    context.log.setLevel(logging.INFO)
-
-    context.log_config()
+    log.setLevel(getattr(logging, config['log_level']))
 
     # grab environment for gear
     with open('/tmp/gear_environ.json', 'r') as f:
         environ = json.load(f)
 
     try:
-        # Download all files from the session in BIDS format
-        # bids_path will point to the BIDS folder
-        if True: # Development hack
-            bids_path = context.download_session_bids()
-            context.log.info(f'BIDS was downloaded into {bids_path}')
 
-            # make sure dataset_description.json exists
-            required_file = bids_path+'/dataset_description.json'
-            if not op.exists(required_file):
-                context.log.info(required_file+' is missing')
-                the_stuff = {
-                    "Acknowledgements": "",
-                    "Authors": [],
-                    "BIDSVersion": "1.2.0",
-                    "DatasetDOI": "",
-                    "Funding": "",
-                    "HowToAcknowledge": "",
-                    "License": "",
-                    "Name": "tome",
-                    "ReferencesAndLinks": [],
-                    "template": "project"
-                }
-                with open(required_file, 'w') as outfile:
-                    json.dump(the_stuff, outfile)
-            else:
-                context.log.info(required_file+' exists')
-        else:
-            bids_path = INPUT_DIR+'tome'
-            bids_path = FLYWHEEL_BASE+'/work/bids'
+        bids_path = download_bids(context)
 
-        if config['run-bids-validation']:
-            # Run BIDS Validator on bids_path
-            command = ['bids-validator','--verbose','--json',bids_path]
-            context.log.info('Command:'+' '.join(command))
-            result = sp.run(command, stdout=sp.PIPE, stderr=sp.PIPE,
-                            universal_newlines=True, env=environ)
-            context.log.info('bids-validator return code: '+str(result.returncode))
-            #context.log.info(result.stdout)
-            bids_output = json.loads(result.stdout)
-            context.log.info('\n\nValid BIDS files summary:\n\n'+pprint.pformat(bids_output['summary'],indent=8)+'\n')
-            num_bids_errors = len(bids_output['issues']['errors'])
-            for err in bids_output['issues']['errors']:
-                err_msg = err['reason']+'\n'
-                for ff in err['files']:
-                    err_msg += f'       {ff["file"]["relativePath"]}\n'
-                context.log.error(err_msg)
-            for warn in bids_output['issues']['warnings']:
-                warn_msg = warn['reason']+'\n'
-                for ff in warn['files']:
-                    if ff["file"]:
-                        warn_msg += f'       {ff["file"]["relativePath"]}\n'
-                context.log.warning(warn_msg)
-
-            if config['abort-on-bids-error']:
-                if num_bids_errors > 0:
-                    context.log.critical(f'{num_bids_errors} BIDS validation errors were detected: NOT running mriqc.')
-                    os.sys.exit(0)
-
-        # Don't pass these arguments to mriqc
-        del config['run-bids-validation']
-        del config['abort-on-bids-error']
+        run_bids_validation(config, bids_path, environ)
 
         # Build a parameter dictionary specific for COMMAND
-        params = Build_Params(context)
+        params = Build_Params(config)
+
         # Validate the COMMAND parameter dictionary
         # Raises Exception on fail
-        Validate_Params(params,context.log)
-        # Build command-line string for subprocess to execute
-        command = [COMMAND]
-        command = BuilCommandList(command, params)
-        # add positional arguments
-        command.append(bids_path)
-        command.append(OUTPUT_DIR)
-        command.append('participant')
-        context.log.info('Command:'+' '.join(command))
+        Validate_Params(params)
 
-        #command = ['mriqc','--help'] # Development hack
+        # Build command-line string for subprocess to execute
+        command = BuilCommandList(params, bids_path)
+
         result = sp.run(command, stdout=sp.PIPE, stderr=sp.PIPE,
                         universal_newlines=True, env=environ)
 
-        context.log.info(result.returncode)
-        context.log.info(result.stdout)
+        log.info(' '+result.returncode)
+        log.info(' '+result.stdout)
 
         if result.returncode != 0:
-            context.log.error('The command:\n ' +
+            log.error(' The command:\n ' +
                   ' '.join(command) +
                   '\nfailed. See log for debugging.')
-            context.log.error(result.stderr)
+            log.error(' '+result.stderr)
             os.sys.exit(result.returncode)
         else:
-            context.log.info("Commands successfully executed!")
+            log.info("' '+Commands successfully executed!")
             os.sys.exit(0)
 
     except Exception as e:
-        #context.log.error(e)
-        context.log.exception('Cannot execute commands.')
+        #log.error(e)
+        log.exception('Ruh row, there is a problem.')
         os.sys.exit(1)
 
     finally:
@@ -219,15 +253,21 @@ if __name__ == '__main__':
         os.chdir(OUTPUT_DIR)
         #if the output/RESULT path exists, zip it regardless of exit status
         if op.exists('/flywheel/v0/output/RESULT/'):
-            context.log.info('Zipping /flywheel/v0/output/RESULT/ directory.')
+            log.info('Zipping /flywheel/v0/output/RESULT/ directory.')
             command1 = ['zip', 'results.anat.zip', 'RESULT']
             result1 = sp.run(command1, stdout=sp.PIPE, stderr=sp.PIPE)
             command2 = ['rm', '-rf', '/flywheel/v0/output/RESULT/']
             result2 = sp.run(command2, stdout=sp.PIPE, stderr=sp.PIPE)
         else:
-            context.log.info('No results directory, /flywheel/v0/output/RESULT, to zip.')
+            log.info('No results directory, /flywheel/v0/output/RESULT, to zip.')
 
-#context.log.info("Exiting early.")
+if __name__ == '__main__':
+    with flywheel.GearContext() as context:
+        context.init_logging()
+        context.log_config()
+        main(context)
+
+#log.info("Exiting early.")
 #os.sys.exit(0)
         
 # vi:set autoindent ts=4 sw=4 expandtab : See Vim, :help 'modeline'

@@ -25,6 +25,11 @@
     }
   },
   "config": {
+    "log_level": {
+      "default": "INFO",
+      "description": "Log verbosity level (ERROR|WARNING|INFO|DEBUG)",
+      "type": "string"
+    },
     "run-bids-validation": {
       "description": "Run BIDS validation before mriqc",
       "type": "boolean",

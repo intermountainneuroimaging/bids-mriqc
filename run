@@ -36,11 +36,14 @@ def download_bids(context):
         one did not get downloaded.
     """
 
-    bids_path = context.download_session_bids()
+    # the usual BIDS path:
+    bids_path = op.join(FLYWHEEL_BASE, 'work/bids')
 
     # If BIDS was already downloaded, don't do it again
     # (this saves time when developing locally)
     if not op.isdir(bids_path):
+
+        bids_path = context.download_session_bids()
 
         # make sure dataset_description.json exists
         required_file = bids_path+'/dataset_description.json'
@@ -94,7 +97,7 @@ def run_bids_validation(config, bids_path, environ):
         #log.info(result.stdout)
         bids_output = json.loads(result.stdout)
 
-        log.info(' bids-validator results:\nValid BIDS files summary:\n' + \
+        log.info(' bids-validator results:\n\nValid BIDS files summary:\n' + \
                  pprint.pformat(bids_output['summary'],indent=8)+'\n')
 
         num_bids_errors = len(bids_output['issues']['errors'])
@@ -102,7 +105,8 @@ def run_bids_validation(config, bids_path, environ):
         for err in bids_output['issues']['errors']:
             err_msg = err['reason']+'\n'
             for ff in err['files']:
-                err_msg += f'       {ff["file"]["relativePath"]}\n'
+                if ff["file"]:
+                    err_msg += f'       {ff["file"]["relativePath"]}\n'
             log.error(' '+err_msg)
 
         for warn in bids_output['issues']['warnings']:
@@ -252,14 +256,14 @@ def main(context):
         # Unless otherwise specified, zip entire results and delete directory
         os.chdir(OUTPUT_DIR)
         #if the output/RESULT path exists, zip it regardless of exit status
-        if op.exists('/flywheel/v0/output/RESULT/'):
-            log.info('Zipping /flywheel/v0/output/RESULT/ directory.')
-            command1 = ['zip', 'results.anat.zip', 'RESULT']
-            result1 = sp.run(command1, stdout=sp.PIPE, stderr=sp.PIPE)
-            command2 = ['rm', '-rf', '/flywheel/v0/output/RESULT/']
-            result2 = sp.run(command2, stdout=sp.PIPE, stderr=sp.PIPE)
-        else:
-            log.info('No results directory, /flywheel/v0/output/RESULT, to zip.')
+        #if op.exists('/flywheel/v0/output/RESULT/'):
+        #    log.info('Zipping /flywheel/v0/output/RESULT/ directory.')
+        #    command1 = ['zip', 'results.anat.zip', 'RESULT']
+        #    result1 = sp.run(command1, stdout=sp.PIPE, stderr=sp.PIPE)
+        #    command2 = ['rm', '-rf', '/flywheel/v0/output/RESULT/']
+        #    result2 = sp.run(command2, stdout=sp.PIPE, stderr=sp.PIPE)
+        #else:
+        #    log.info('No results directory, /flywheel/v0/output/RESULT, to zip.')
 
 if __name__ == '__main__':
     with flywheel.GearContext() as context:

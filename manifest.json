@@ -7,15 +7,12 @@
   "maintainer": "Flywheel <support@flywheel.io>",
   "source": "https://github.com/flywheel-apps/bids-mriqc",
   "url": "https://mriqc.readthedocs.io/en/stable/about.html",
-  "version": "0.1.9_0.15.1",
-  "custom": {
-    "docker-image": "flywheel/bids-mriqc:0.1.9_0.15.1"
-  },
+  "version": "0.1.10_0.15.1",
   "license": "BSD-3-Clause",
   "custom": {
     "gear-builder": {
       "category": "analysis",
-      "image": "flywheel/bids-mriqc:0.1.9_0.15.1"
+      "image": "flywheel/bids-mriqc:0.1.10_0.15.1"
     }
   },
   "inputs": {
@@ -27,7 +24,7 @@
   "config": {
     "log_level": {
       "default": "INFO",
-      "description": "Log verbosity level (ERROR|WARNING|INFO|DEBUG)",
+      "description": "Gear Log verbosity level (ERROR|WARNING|INFO|DEBUG)",
       "type": "string"
     },
     "run-bids-validation": {
@@ -112,7 +109,7 @@
       "optional": true
     },
     "verbose": {
-      "description": "increases log verbosity for each occurence, debug level is -vvv",
+      "description": "increases mriqc log verbosity for each occurence, debug level is -vvv",
       "type": "string",
       "enum": [
         "",
@@ -120,7 +117,7 @@
         "vv",
         "vvv"
       ],
-      "default": "vv"
+      "default": "v"
     },
     "webapi-url": {
       "description": "IP address where the MRIQC WebAPI is listening",

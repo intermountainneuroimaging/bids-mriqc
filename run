@@ -164,7 +164,7 @@ def Validate_Params(Params):
     #        log.warning(' The value of ' + str(Params['s'] + ' for -s may cause a singular matrix'))
 
 
-def BuilCommandList(command, ParamList, bids_path):
+def BuilCommandList(ParamList, bids_path):
     """
     command is a list of prepared commands
     ParamList is a dictionary of key:value pairs to be put into the command list as such ("-k value" or "--key=value")
@@ -209,6 +209,7 @@ def main(context):
     config = context.config
 
     log.setLevel(getattr(logging, config['log_level']))
+    del config['log_level']
 
     # grab environment for gear
     with open('/tmp/gear_environ.json', 'r') as f:
@@ -233,7 +234,7 @@ def main(context):
         result = sp.run(command, stdout=sp.PIPE, stderr=sp.PIPE,
                         universal_newlines=True, env=environ)
 
-        log.info(' '+result.returncode)
+        log.info(' '+str(result.returncode))
         log.info(' '+result.stdout)
 
         if result.returncode != 0:

@@ -10,23 +10,23 @@ import subprocess as sp
 import shutil
 import pprint
 import logging
+import psutil
+import glob
+import csv
 
 import flywheel
 
 # Gear basics
 FLYWHEEL_BASE = '/flywheel/v0'
 MANIFEST_FILE = op.join(FLYWHEEL_BASE, 'manifest.json')
-CONFIG_FILE   = op.join(FLYWHEEL_BASE, 'config.json')
-INPUT_DIR     = op.join(FLYWHEEL_BASE, 'input')
-OUTPUT_DIR    = op.join(FLYWHEEL_BASE, 'output')
-COMMAND       = 'mriqc'
-RESULT        = 'derivatives'
+CONFIG_FILE = op.join(FLYWHEEL_BASE, 'config.json')
+INPUT_DIR = op.join(FLYWHEEL_BASE, 'input')
+OUTPUT_DIR = op.join(FLYWHEEL_BASE, 'output')
+WORK_DIR = op.join(FLYWHEEL_BASE, 'work')
+COMMAND = 'mriqc'
+RESULT = 'derivatives'
 
-
-# Set log name using versioned gear name
-with open(MANIFEST_FILE, 'r') as f:
-    manifest = json.load(f)
-log = logging.getLogger(manifest['custom']['gear-builder']['image'])
+log = logging.getLogger('flywheel/bids-mriqc')
 
 
 def download_bids(context):
@@ -44,9 +44,15 @@ def download_bids(context):
     if not op.isdir(bids_path):
 
         bids_path = context.download_session_bids()
+        # Use the following command instead (after core is updated with a fix
+        # for it) because it will return the existing dataset_description.json
+        # file and does not download scans that mriqc does not handle.
+        # bids_path = context.download_project_bids(folders=['anat', 'func'])
 
         # make sure dataset_description.json exists
-        required_file = bids_path+'/dataset_description.json'
+        # Is there a way to download the dataset_description.json file from the 
+        # platform instead of creating a generic stub?
+        required_file = bids_path + '/dataset_description.json'
         if not op.exists(required_file):
             log.info(f' Creating missing {required_file}.')
             the_stuff = {
@@ -80,70 +86,71 @@ def run_bids_validation(config, bids_path, environ):
             RUN npm install -g bids-validator
         This prints a summary of files that are valid,
         and then lists errors and warnings.
-        Then it exits if abort-on-bids-error is set and
+        Then it exits if gear-abort-on-bids-error is set and
         if there are any errors.
         The config MUST contain both of these:
-            run-bids-validation
-            abort-on-bids-error
+            gear-run-bids-validation
+            gear-abort-on-bids-error
     """
 
-    if config['run-bids-validation']:
+    if config['gear-run-bids-validation']:
 
-        command = ['bids-validator','--verbose','--json',bids_path]
-        log.info(' Command:'+' '.join(command))
+        command = ['bids-validator', '--verbose', '--json', bids_path]
+        log.info(' Command:' + ' '.join(command))
         result = sp.run(command, stdout=sp.PIPE, stderr=sp.PIPE,
                         universal_newlines=True, env=environ)
-        log.info(' bids-validator return code: '+str(result.returncode))
-        #log.info(result.stdout)
+        log.info(' bids-validator return code: ' + str(result.returncode))
         bids_output = json.loads(result.stdout)
 
+        # show summary of valid BIDS stuff
         log.info(' bids-validator results:\n\nValid BIDS files summary:\n' + \
-                 pprint.pformat(bids_output['summary'],indent=8)+'\n')
+                 pprint.pformat(bids_output['summary'], indent=8) + '\n')
 
         num_bids_errors = len(bids_output['issues']['errors'])
 
+        # show all errors
         for err in bids_output['issues']['errors']:
-            err_msg = err['reason']+'\n'
+            err_msg = err['reason'] + '\n'
             for ff in err['files']:
                 if ff["file"]:
                     err_msg += f'       {ff["file"]["relativePath"]}\n'
-            log.error(' '+err_msg)
+            log.error(' ' + err_msg)
 
+        # show all warnings
         for warn in bids_output['issues']['warnings']:
-            warn_msg = warn['reason']+'\n'
+            warn_msg = warn['reason'] + '\n'
             for ff in warn['files']:
                 if ff["file"]:
                     warn_msg += f'       {ff["file"]["relativePath"]}\n'
-            log.warning(' '+warn_msg)
+            log.warning(' ' + warn_msg)
 
-        if config['abort-on-bids-error']:
-            if num_bids_errors > 0:
-                log.critical(f' {num_bids_errors} BIDS validation errors '+\
-                              'were detected: NOT running mriqc.')
-                os.sys.exit(1)
-
-    # Don't pass these arguments on, the are used up
-    del config['run-bids-validation']
-    del config['abort-on-bids-error']
+        if config['gear-abort-on-bids-error'] and num_bids_errors > 0:
+            log.critical(f' {num_bids_errors} BIDS validation errors ' + \
+                         'were detected: NOT running mriqc.')
+            os.sys.exit(1)
 
 
-def Build_Params(config):
-    Params = {}
+def build_params(config):
+    params = {}
     for key in config.keys():
+        if key[:5] == 'gear-':  # Skip any gear- parameters
+            continue
         # Use only those boolean values that are True
         if type(config[key]) == bool:
             if config[key]:
-                Params[key] = True
+                params[key] = True
+            # else ignore (could this cause a problem?)
         else:
             if len(key) == 1:
-                Params[key] = config[key]
+                params[key] = config[key]
             else:
                 if config[key] != 0:  # if zero, skip and use defaults
-                    Params[key] = config[key]
-    return Params
+                    params[key] = config[key]
+                # else ignore (could this caus a problem?)
+    return params
 
 
-def Validate_Params(Params):
+def validate_params(params):
     """
     Validate settings of the Parameters constructed.
     Gives warnings for possible settings that could result in bad results.
@@ -151,23 +158,25 @@ def Validate_Params(Params):
     """
 
     # Test for input existence
-    #if not op.exists(Params['i']):
+    # if not op.exists(Params['i']):
     #    raise Exception('Input File Not Found')
 
     # Tests for specific problems/interactions that can raise expections or log warnings
-    #if ('betfparam' in Params) and ('nononlinreg' in Params):
+    # if ('betfparam' in Params) and ('nononlinreg' in Params):
     #    if(Params['betfparam']>0.0):
     #        raise Exception('For betfparam values > zero, nonlinear registration is required.')
 
-    #if ('s' in Params.keys()):
+    # if ('s' in Params.keys()):
     #    if Params['s']==0:
-    #        log.warning(' The value of ' + str(Params['s'] + ' for -s may cause a singular matrix'))
+    #        log.warning(' The value of ' + str(Params['s'] + \
+    #                    ' for -s may cause a singular matrix'))
 
 
-def BuilCommandList(ParamList, bids_path):
+def buil_command_list(ParamList, bids_path):
     """
     command is a list of prepared commands
-    ParamList is a dictionary of key:value pairs to be put into the command list as such ("-k value" or "--key=value")
+    ParamList is a dictionary of key:value pairs to be put into the command list 
+    as such ("-k value" or "--key=value")
     """
 
     command = [COMMAND]
@@ -176,7 +185,7 @@ def BuilCommandList(ParamList, bids_path):
         # Single character command-line parameters are preceded by a single '-'
         if len(key) == 1:
             command.append('-' + key)
-            if len(str(ParamList[key]))!=0:
+            if len(str(ParamList[key])) != 0:
                 command.append(str(ParamList[key]))
         # Multi-Character command-line parameters are preceded by a double '--'
         else:
@@ -191,80 +200,166 @@ def BuilCommandList(ParamList, bids_path):
                     command.append('--' + key)
                 else:
                     command.append('--' + key + '=' + str(ParamList[key]))
-        if key == 'verbose': # handle a 'count' argparse argument
+        if key == 'verbose':  # handle a 'count' argparse argument
             # replace "--verbose=vvv' with '-vvv'
-            command[-1] = '-'+ParamList[key]
+            command[-1] = '-' + ParamList[key]
 
     # add positional arguments
     command.append(bids_path)
     command.append(OUTPUT_DIR)
     command.append('participant')
-    log.info(' Command:'+' '.join(command))
+    log.info(' Command:' + ' '.join(command))
 
     return command
 
 
-def main(context):
+def zip_html_results():
+    """ Construct one index.html to rule them all so viewer can see them
+        MRIQC outputs reports on subjects grouped by type of scan (T1,T2,dwi,func)
+        They are html files in the output/ directory that link to each other.
+        Each group .html file has a .tsv file that lists the individual subjects.
+    """
 
+    log.info(' Creating index.html')
+    os.chdir(OUTPUT_DIR)
+
+    # the first part of index.html
+    html1 = '<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">\n' + \
+            '<html>\n' + \
+            '  <head>\n' + \
+            '    <meta http-equiv="content-type" content="text/html; charset=UTF-8">\n' + \
+            '    <title>MRIQC Output</title>\n' + \
+            '  </head>\n' + \
+            '  <body>\n' + \
+            '    <b>MRIQC Output</b><br>\n' + \
+            '    <br>\n' + \
+            '    <tt>\n'
+
+    # get a list of all "group" html files
+    groups = glob.glob('group_*.html')
+
+    lines = []
+    for group in groups:
+
+        # First, add a link to that group file
+        s = '    <a href="./' + group + '">' + group[:-5] + '</a><br>\n'
+        lines.append(s)
+
+        # Then add a link each individual subject in that group
+        s = '    <blockquote>\n'
+        lines.append(s)
+
+        # similarly named .tsv files tell the names of all individual subjects
+        with open(group[:-5] + '.tsv') as tsvfile:
+
+            reader = csv.reader(tsvfile, delimiter='\t')
+
+            for rr, row in enumerate(reader):
+                if rr > 0:
+                    s = '      <a href="./' + row[0] + '.html' + '">' + row[0] + '</a><br>\n'
+                    lines.append(s)
+
+        s = '    </blockquote>\n'
+        lines.append(s)
+
+    # The final part of index.html
+    html2 = '    <br>\n' + \
+            '    </tt>\n' + \
+            '  </body>\n' + \
+            '</html>\n'
+
+    # put all of that text into the actual file
+    with open("index.html", "w") as text_file:
+        text_file.write(html1)
+        for line in lines:
+            text_file.write(line)
+        text_file.write(html2)
+
+    # noinspection PyUnreachableCode
+    if False:  # hack: just save the pre-computed zip file
+        # compress everything into an appropriately named archive file
+        # *.html.zip file are automatically shown in another tab in the browser
+        cmd = 'zip -q mriqc.html.zip *.html *.tsv'
+        log.info(f' running "{cmd}"')
+        result = sp.run(cmd, shell=True, stdout=sp.PIPE, stderr=sp.PIPE, encoding='utf-8')
+        log.info(' return code: ' + str(result.returncode))
+        log.info(f' {cmd.split()[0]} output\n' + str(result.stdout))
+    else:  # hack
+        os.chdir(FLYWHEEL_BASE)
+        shutil.copyfile('mriqc.html.zip', 'output/mriqc.html.zip')
+
+
+def main(context):
     config = context.config
 
-    log.setLevel(getattr(logging, config['log_level']))
-    del config['log_level']
+    log.setLevel(getattr(logging, config['gear-log-level']))
+
+    log.debug(f'psutil.cpu_count()= {psutil.cpu_count()}')
+    log.debug(f'psutil.virtual_memory().total= {psutil.virtual_memory().total / (1024 ** 3):4.1f} GiB')
+    log.debug(f'psutil.virtual_memory().available= {psutil.virtual_memory().available / (1024 ** 3):4.1f} GiB')
 
     # grab environment for gear
     with open('/tmp/gear_environ.json', 'r') as f:
         environ = json.load(f)
 
     try:
+        # noinspection PyUnreachableCode
+        if False:  # hack: to not waste time actually doing the work
 
-        bids_path = download_bids(context)
+            bids_path = download_bids(context)
 
-        run_bids_validation(config, bids_path, environ)
+            run_bids_validation(config, bids_path, environ)
 
-        # Build a parameter dictionary specific for COMMAND
-        params = Build_Params(config)
+            # Build a parameter dictionary specific for COMMAND
+            params = build_params(config)
 
-        # Validate the COMMAND parameter dictionary
-        # Raises Exception on fail
-        Validate_Params(params)
+            # Validate the COMMAND parameter dictionary
+            # Raises Exception on fail
+            validate_params(params)
 
-        # Build command-line string for subprocess to execute
-        command = BuilCommandList(params, bids_path)
+            # Build command-line string for subprocess to execute
+            command = buil_command_list(params, bids_path)
 
-        result = sp.run(command, stdout=sp.PIPE, stderr=sp.PIPE,
-                        universal_newlines=True, env=environ)
+            # Run the actual command this gear was created for
+            result = sp.run(command, stdout=sp.PIPE, stderr=sp.PIPE,
+                            universal_newlines=True, env=environ)
 
-        log.info(' '+str(result.returncode))
-        log.info(' '+result.stdout)
+        else:  # hack: pretend it was done
+            result = sp.CompletedProcess
+            result.returncode = 0
+            result.stdout = "didn't really run that"
+
+        log.info(' return code: ' + str(result.returncode))
+        log.info(f' {COMMAND} output\n' + result.stdout)
 
         if result.returncode != 0:
             log.error(' The command:\n ' +
-                  ' '.join(command) +
-                  '\nfailed. See log for debugging.')
-            log.error(' '+result.stderr)
+                      ' '.join(command) +
+                      '\nfailed. See log for debugging.')
+            log.error(' ' + result.stderr)
             os.sys.exit(result.returncode)
         else:
-            log.info("' '+Commands successfully executed!")
-            os.sys.exit(0)
+            log.info(f' {COMMAND} successfully executed!')
 
     except Exception as e:
-        #log.error(e)
-        log.exception('Ruh row, there is a problem.')
+        # log.error(e)
+        log.exception('Ruh row, there was a problem.')
         os.sys.exit(1)
 
     finally:
         # Cleanup, move all results to the output directory
-        # Unless otherwise specified, zip entire results and delete directory
-        os.chdir(OUTPUT_DIR)
-        #if the output/RESULT path exists, zip it regardless of exit status
-        #if op.exists('/flywheel/v0/output/RESULT/'):
-        #    log.info('Zipping /flywheel/v0/output/RESULT/ directory.')
-        #    command1 = ['zip', 'results.anat.zip', 'RESULT']
-        #    result1 = sp.run(command1, stdout=sp.PIPE, stderr=sp.PIPE)
-        #    command2 = ['rm', '-rf', '/flywheel/v0/output/RESULT/']
-        #    result2 = sp.run(command2, stdout=sp.PIPE, stderr=sp.PIPE)
-        #else:
-        #    log.info('No results directory, /flywheel/v0/output/RESULT, to zip.')
+
+        zip_html_results()
+
+        # possibly save ALL intermediate output
+        if config['gear-save-all-output']:
+            os.chdir(FLYWHEEL_BASE)
+            cmd = f'zip -r -q {OUTPUT_DIR}/mriqc_work.zip work'
+            log.info(f' running "{cmd}"')
+            result = sp.run(cmd, shell=True, stdout=sp.PIPE, stderr=sp.PIPE, encoding='utf-8')
+            log.info(' return code: ' + str(result.returncode))
+            log.info(f' {cmd.split()[0]} output\n' + str(result.stdout))
+
 
 if __name__ == '__main__':
     with flywheel.GearContext() as context:
@@ -272,7 +367,7 @@ if __name__ == '__main__':
         context.log_config()
         main(context)
 
-#log.info("Exiting early.")
-#os.sys.exit(0)
-        
+# log.info("Exiting early.")
+# os.sys.exit(0)
+
 # vi:set autoindent ts=4 sw=4 expandtab : See Vim, :help 'modeline'

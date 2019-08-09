@@ -13,6 +13,7 @@ import logging
 import psutil
 import glob
 import csv
+import datetime
 
 import flywheel
 
@@ -26,10 +27,10 @@ WORK_DIR = op.join(FLYWHEEL_BASE, 'work')
 COMMAND = 'mriqc'
 RESULT = 'derivatives'
 
-log = logging.getLogger('flywheel/bids-mriqc')
+LOG = logging.getLogger('flywheel/bids-mriqc')
 
 
-def download_bids(context):
+def download_bids():
     """ Download all files from the session in BIDS format
         bids_path will point to the local BIDS folder
         This creates a simiple dataset_description.json if
@@ -54,7 +55,7 @@ def download_bids(context):
         # platform instead of creating a generic stub?
         required_file = bids_path + '/dataset_description.json'
         if not op.exists(required_file):
-            log.info(f' Creating missing {required_file}.')
+            LOG.info(f' Creating missing {required_file}.')
             the_stuff = {
                 "Acknowledgements": "",
                 "Authors": [],
@@ -70,12 +71,12 @@ def download_bids(context):
             with open(required_file, 'w') as outfile:
                 json.dump(the_stuff, outfile)
         else:
-            log.info(f'{required_file} exists.')
+            LOG.info(f'{required_file} exists.')
 
-        log.info(f' BIDS was downloaded into {bids_path}')
+        LOG.info(f' BIDS was downloaded into {bids_path}')
 
     else:
-        log.info(f' Using existing BIDS path {bids_path}')
+        LOG.info(f' Using existing BIDS path {bids_path}')
 
     return bids_path
 
@@ -96,14 +97,14 @@ def run_bids_validation(config, bids_path, environ):
     if config['gear-run-bids-validation']:
 
         command = ['bids-validator', '--verbose', '--json', bids_path]
-        log.info(' Command:' + ' '.join(command))
+        LOG.info(' Command:' + ' '.join(command))
         result = sp.run(command, stdout=sp.PIPE, stderr=sp.PIPE,
                         universal_newlines=True, env=environ)
-        log.info(' bids-validator return code: ' + str(result.returncode))
+        LOG.info(' bids-validator return code: ' + str(result.returncode))
         bids_output = json.loads(result.stdout)
 
         # show summary of valid BIDS stuff
-        log.info(' bids-validator results:\n\nValid BIDS files summary:\n' + \
+        LOG.info(' bids-validator results:\n\nValid BIDS files summary:\n' +
                  pprint.pformat(bids_output['summary'], indent=8) + '\n')
 
         num_bids_errors = len(bids_output['issues']['errors'])
@@ -114,7 +115,7 @@ def run_bids_validation(config, bids_path, environ):
             for ff in err['files']:
                 if ff["file"]:
                     err_msg += f'       {ff["file"]["relativePath"]}\n'
-            log.error(' ' + err_msg)
+            LOG.error(' ' + err_msg)
 
         # show all warnings
         for warn in bids_output['issues']['warnings']:
@@ -122,10 +123,10 @@ def run_bids_validation(config, bids_path, environ):
             for ff in warn['files']:
                 if ff["file"]:
                     warn_msg += f'       {ff["file"]["relativePath"]}\n'
-            log.warning(' ' + warn_msg)
+            LOG.warning(' ' + warn_msg)
 
         if config['gear-abort-on-bids-error'] and num_bids_errors > 0:
-            log.critical(f' {num_bids_errors} BIDS validation errors ' + \
+            LOG.critical(f' {num_bids_errors} BIDS validation errors ' +
                          'were detected: NOT running mriqc.')
             os.sys.exit(1)
 
@@ -168,47 +169,47 @@ def validate_params(params):
 
     # if ('s' in Params.keys()):
     #    if Params['s']==0:
-    #        log.warning(' The value of ' + str(Params['s'] + \
+    #        LOG.warning(' The value of ' + str(Params['s'] + \
     #                    ' for -s may cause a singular matrix'))
 
 
-def buil_command_list(ParamList, bids_path):
+def buil_command_list(param_list, bids_path):
     """
     command is a list of prepared commands
-    ParamList is a dictionary of key:value pairs to be put into the command list 
+    param_list is a dictionary of key:value pairs to be put into the command list
     as such ("-k value" or "--key=value")
     """
 
     command = [COMMAND]
 
-    for key in ParamList.keys():
+    for key in param_list.keys():
         # Single character command-line parameters are preceded by a single '-'
         if len(key) == 1:
             command.append('-' + key)
-            if len(str(ParamList[key])) != 0:
-                command.append(str(ParamList[key]))
+            if len(str(param_list[key])) != 0:
+                command.append(str(param_list[key]))
         # Multi-Character command-line parameters are preceded by a double '--'
         else:
             # If Param is boolean and true include, else exclude
-            if type(ParamList[key]) == bool:
-                if ParamList[key]:
+            if type(param_list[key]) == bool:
+                if param_list[key]:
                     command.append('--' + key)
             else:
                 # If Param not boolean, but without value include without value
                 # (e.g. '--key'), else include value (e.g. '--key=value')
-                if len(str(ParamList[key])) == 0:
+                if len(str(param_list[key])) == 0:
                     command.append('--' + key)
                 else:
-                    command.append('--' + key + '=' + str(ParamList[key]))
+                    command.append('--' + key + '=' + str(param_list[key]))
         if key == 'verbose':  # handle a 'count' argparse argument
             # replace "--verbose=vvv' with '-vvv'
-            command[-1] = '-' + ParamList[key]
+            command[-1] = '-' + param_list[key]
 
     # add positional arguments
     command.append(bids_path)
     command.append(OUTPUT_DIR)
     command.append('participant')
-    log.info(' Command:' + ' '.join(command))
+    LOG.info(' Command:' + ' '.join(command))
 
     return command
 
@@ -218,9 +219,13 @@ def zip_html_results():
         MRIQC outputs reports on subjects grouped by type of scan (T1,T2,dwi,func)
         They are html files in the output/ directory that link to each other.
         Each group .html file has a .tsv file that lists the individual subjects.
+
+        NOTE: this DOES NOT WORK because the server can't serve the pages
+        that are linked to.  So each html page must be saved as an archive
+        separately.  Maybe this will work someday so I'm leaving this code here.
     """
 
-    log.info(' Creating index.html')
+    LOG.info(' Creating index.html')
     os.chdir(OUTPUT_DIR)
 
     # the first part of index.html
@@ -275,38 +280,83 @@ def zip_html_results():
             text_file.write(line)
         text_file.write(html2)
 
-    # noinspection PyUnreachableCode
-    if False:  # hack: just save the pre-computed zip file
-        # compress everything into an appropriately named archive file
-        # *.html.zip file are automatically shown in another tab in the browser
-        cmd = 'zip -q mriqc.html.zip *.html *.tsv'
-        log.info(f' running "{cmd}"')
-        result = sp.run(cmd, shell=True, stdout=sp.PIPE, stderr=sp.PIPE, encoding='utf-8')
-        log.info(' return code: ' + str(result.returncode))
-        log.info(f' {cmd.split()[0]} output\n' + str(result.stdout))
-    else:  # hack
-        os.chdir(FLYWHEEL_BASE)
-        shutil.copyfile('mriqc.html.zip', 'output/mriqc.html.zip')
+    # compress everything into an appropriately named archive file
+    # *.html.zip file are automatically shown in another tab in the browser
+    cmd = 'zip -q mriqc.html.zip *.html *.tsv'
+    LOG.info(f' running "{cmd}"')
+    result = sp.run(cmd, shell=True, stdout=sp.PIPE, stderr=sp.PIPE, encoding='utf-8')
+    LOG.info(' return code: ' + str(result.returncode))
+    LOG.info(f' {cmd.split()[0]} output\n' + str(result.stdout))
 
 
-def main(context):
+# Copied from bids-app-template/utils/results.py
+def zip_it_zip_it_good(name):
+    """ Compress html file into an appropriately named archive file
+        *.html.zip files are automatically shown in another tab in the browser """
+
+    cmd = f'zip -q {name}.zip index.html'
+    LOG.debug(f' creating viewable archive "{name}.zip"')
+    result = sp.run(cmd, shell=True, stdout=sp.PIPE, stderr=sp.PIPE, encoding='utf-8')
+    if result.returncode != 0:
+        LOG.info(f' Problem running {cmd}')
+        LOG.info(' return code: ' + str(result.returncode))
+        LOG.info(f' {cmd.split()[0]} output\n' + str(result.stdout))
+    else:
+        LOG.debug(' return code: ' + str(result.returncode))
+        LOG.debug(f' {cmd.split()[0]} output\n' + str(result.stdout))
+
+
+# Copied from bids-app-template/utils/results.py
+def zip_htmls():
+    """ Since zip_all_html() doesn't work, each html file must be
+        converted into an archive individually.
+        For each html file, rename it to be "index.html", then create a zip
+        archive from it.
+    """
+
+    LOG.info(' Creating viewable archives for all html files')
+    os.chdir(OUTPUT_DIR)
+
+    html_files = glob.glob('*.html')
+
+    # if there is an index.html, do it first and re-name it for safe keeping
+    save_name = ''
+    if op.exists('index.html'):
+        zip_it_zip_it_good('index.html')
+
+        now = datetime.datetime.now()
+        save_name = now.strftime("%Y-%m-%d_%H-%M-%S") + '_index.html'
+        os.rename('index.html', save_name)
+
+        html_files.remove('index.html')  # don't do this one later
+
+    for h_file in html_files:
+        os.rename(h_file, 'index.html')
+        zip_it_zip_it_good(h_file)
+        os.rename('index.html', h_file)
+
+    # reestore if necessary
+    if save_name != '':
+        os.rename(save_name, 'index.html')
+
+
+def main():
     config = context.config
 
-    log.setLevel(getattr(logging, config['gear-log-level']))
+    LOG.setLevel(getattr(logging, config['gear-log-level']))
 
-    log.debug(f'psutil.cpu_count()= {psutil.cpu_count()}')
-    log.debug(f'psutil.virtual_memory().total= {psutil.virtual_memory().total / (1024 ** 3):4.1f} GiB')
-    log.debug(f'psutil.virtual_memory().available= {psutil.virtual_memory().available / (1024 ** 3):4.1f} GiB')
+    LOG.debug(f'psutil.cpu_count()= {psutil.cpu_count()}')
+    LOG.debug(f'psutil.virtual_memory().total= {psutil.virtual_memory().total / (1024 ** 3):4.1f} GiB')
+    LOG.debug(f'psutil.virtual_memory().available= {psutil.virtual_memory().available / (1024 ** 3):4.1f} GiB')
 
     # grab environment for gear
     with open('/tmp/gear_environ.json', 'r') as f:
         environ = json.load(f)
 
     try:
-        # noinspection PyUnreachableCode
-        if False:  # hack: to not waste time actually doing the work
+        if True:  # dev hack: to not waste time actually doing the work
 
-            bids_path = download_bids(context)
+            bids_path = download_bids()
 
             run_bids_validation(config, bids_path, environ)
 
@@ -324,50 +374,50 @@ def main(context):
             result = sp.run(command, stdout=sp.PIPE, stderr=sp.PIPE,
                             universal_newlines=True, env=environ)
 
-        else:  # hack: pretend it was done
+        else:  # dev hack: pretend it was done
             result = sp.CompletedProcess
             result.returncode = 0
             result.stdout = "didn't really run that"
 
-        log.info(' return code: ' + str(result.returncode))
-        log.info(f' {COMMAND} output\n' + result.stdout)
+        LOG.info(' return code: ' + str(result.returncode))
+        LOG.info(f' {COMMAND} output\n' + result.stdout)
 
         if result.returncode != 0:
-            log.error(' The command:\n ' +
+            LOG.error(' The command:\n ' +
                       ' '.join(command) +
                       '\nfailed. See log for debugging.')
-            log.error(' ' + result.stderr)
+            LOG.error(' ' + result.stderr)
             os.sys.exit(result.returncode)
         else:
-            log.info(f' {COMMAND} successfully executed!')
+            LOG.info(f' {COMMAND} successfully executed!')
 
     except Exception as e:
-        # log.error(e)
-        log.exception('Ruh row, there was a problem.')
+        # LOG.error(e)
+        LOG.exception('Ruh row, there was a problem.')
         os.sys.exit(1)
 
     finally:
         # Cleanup, move all results to the output directory
 
-        zip_html_results()
+        zip_htmls()
 
         # possibly save ALL intermediate output
         if config['gear-save-all-output']:
             os.chdir(FLYWHEEL_BASE)
             cmd = f'zip -r -q {OUTPUT_DIR}/mriqc_work.zip work'
-            log.info(f' running "{cmd}"')
+            LOG.info(f' running "{cmd}"')
             result = sp.run(cmd, shell=True, stdout=sp.PIPE, stderr=sp.PIPE, encoding='utf-8')
-            log.info(' return code: ' + str(result.returncode))
-            log.info(f' {cmd.split()[0]} output\n' + str(result.stdout))
+            LOG.info(' return code: ' + str(result.returncode))
+            LOG.info(f' {cmd.split()[0]} output\n' + str(result.stdout))
 
 
 if __name__ == '__main__':
     with flywheel.GearContext() as context:
         context.init_logging()
         context.log_config()
-        main(context)
+        main()
 
-# log.info("Exiting early.")
+# LOG.info("Exiting early.")
 # os.sys.exit(0)
 
 # vi:set autoindent ts=4 sw=4 expandtab : See Vim, :help 'modeline'

@@ -22,8 +22,6 @@ WORKDIR ${FLYWHEEL}
 COPY run ${FLYWHEEL}/run
 COPY manifest.json ${FLYWHEEL}/manifest.json
 
-COPY mriqc.html.zip ${FLYWHEEL}/mriqc.html.zip
-
 # Configure entrypoint
 RUN chmod a+x /flywheel/v0/run
 ENTRYPOINT ["/flywheel/v0/run"]

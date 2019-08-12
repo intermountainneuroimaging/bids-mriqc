@@ -324,10 +324,11 @@ def main():
     finally:
         # Cleanup, move all results to the output directory
 
-        zip_htmls()
+        if config['gear-zip-html']:
+            zip_htmls()
 
         # possibly save ALL intermediate output
-        if config['gear-save-all-output']:
+        if config['gear-save-intermediate-work']:
             os.chdir(FLYWHEEL_BASE)
             cmd = f'zip -r -q {OUTPUT_DIR}/mriqc_work.zip work'
             LOG.info(f' running "{cmd}"')

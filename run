@@ -155,25 +155,15 @@ def validate_params(params):
     """
     Validate settings of the Parameters constructed.
     Gives warnings for possible settings that could result in bad results.
-    Gives errors (and raises exceptions) for settings that are violations 
+    Logs errors (and raises exceptions) for settings that are violations 
     """
 
     # Test for input existence
     # if not op.exists(Params['i']):
     #    raise Exception('Input File Not Found')
+    pass
 
-    # Tests for specific problems/interactions that can raise expections or log warnings
-    # if ('betfparam' in Params) and ('nononlinreg' in Params):
-    #    if(Params['betfparam']>0.0):
-    #        raise Exception('For betfparam values > zero, nonlinear registration is required.')
-
-    # if ('s' in Params.keys()):
-    #    if Params['s']==0:
-    #        LOG.warning(' The value of ' + str(Params['s'] + \
-    #                    ' for -s may cause a singular matrix'))
-
-
-def buil_command_list(param_list, bids_path):
+def build_command_list(param_list, bids_path):
     """
     command is a list of prepared commands
     param_list is a dictionary of key:value pairs to be put into the command list
@@ -182,7 +172,13 @@ def buil_command_list(param_list, bids_path):
 
     command = [COMMAND]
 
+    # add positional arguments first
+    command.append(bids_path)
+    command.append(OUTPUT_DIR)
+    command.append('participant')
+
     for key in param_list.keys():
+        print('key:',key,'value:',param_list[key])
         # Single character command-line parameters are preceded by a single '-'
         if len(key) == 1:
             command.append('-' + key)
@@ -200,15 +196,18 @@ def buil_command_list(param_list, bids_path):
                 if len(str(param_list[key])) == 0:
                     command.append('--' + key)
                 else:
-                    command.append('--' + key + '=' + str(param_list[key]))
+                    # check for argparse nargs='*' lists of multiple values
+                    if (isinstance(param_list[key], str) and len(param_list[key].split()) > 1):
+                    # then it is a list of multiple things: e.g. "--modality T1w T2w"
+                        command.append('--' + key)
+                        for item in param_list[key].split():
+                            command.append(item)
+                    else:
+                        command.append('--' + key + '=' + str(param_list[key]))
         if key == 'verbose':  # handle a 'count' argparse argument
             # replace "--verbose=vvv' with '-vvv'
             command[-1] = '-' + param_list[key]
 
-    # add positional arguments
-    command.append(bids_path)
-    command.append(OUTPUT_DIR)
-    command.append('participant')
     LOG.info(' Command:' + ' '.join(command))
 
     return command
@@ -293,7 +292,7 @@ def main():
             validate_params(params)
 
             # Build command-line string for subprocess to execute
-            command = buil_command_list(params, bids_path)
+            command = build_command_list(params, bids_path)
 
             # Run the actual command this gear was created for
             result = sp.run(command, stdout=sp.PIPE, stderr=sp.PIPE,
@@ -317,7 +316,7 @@ def main():
             LOG.info(f' {COMMAND} successfully executed!')
 
     except Exception as e:
-        # LOG.error(e)
+        LOG.critical(e,)
         LOG.exception('Ruh row, there was a problem.')
         os.sys.exit(1)
 
@@ -338,6 +337,7 @@ def main():
 
 
 if __name__ == '__main__':
+
     with flywheel.GearContext() as context:
         context.init_logging()
         context.log_config()

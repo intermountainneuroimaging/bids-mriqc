@@ -178,7 +178,6 @@ def build_command_list(param_list, bids_path):
     command.append('participant')
 
     for key in param_list.keys():
-        print('key:',key,'value:',param_list[key])
         # Single character command-line parameters are preceded by a single '-'
         if len(key) == 1:
             command.append('-' + key)

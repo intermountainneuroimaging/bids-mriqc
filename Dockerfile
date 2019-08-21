@@ -4,15 +4,15 @@ FROM poldracklab/mriqc:0.15.1
 MAINTAINER Flywheel <support@flywheel.io>
 
 # Save docker environ
-RUN python -c 'import os, json; f = open("/tmp/gear_environ.json", "w"); json.dump(dict(os.environ), f)' 
+RUN python -c 'import os, json; f = open("/tmp/gear_environ.json", "w"); json.dump(dict(os.environ), f)'
 
 RUN apt-get update && apt-get install -y zip
 
-RUN pip install --pre flywheel-sdk
-RUN pip install flywheel-bids
-RUN pip install psutil
+RUN pip install flywheel-sdk==9.0.2 \
+        flywheel-bids==0.8.0 \
+        psutil==5.6.3
 
-RUN npm install -g bids-validator
+RUN npm install -g bids-validator@1.3.0
 
 # Make directory for flywheel spec (v0)
 ENV FLYWHEEL /flywheel/v0

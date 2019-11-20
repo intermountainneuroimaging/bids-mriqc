@@ -273,8 +273,15 @@ def execute(context, log):
 
         # clean up: remove output that was zipped
         if os.path.exists(context.gear_dict['output_analysisid_dir']):
+            if not context.config['gear-keep-output']:
 
-            shutil.rmtree(context.gear_dict['output_analysisid_dir'])
+                shutil.rmtree(context.gear_dict['output_analysisid_dir'])
+                log.debug('removing output directory "' + 
+                          context.gear_dict['output_analysisid_dir'] + '"')
+
+            else:
+                log.info('NOT removing output directory "' + 
+                          context.gear_dict['output_analysisid_dir'] + '"')
 
         else:
             log.info('Output directory does not exist so it cannot be removed')

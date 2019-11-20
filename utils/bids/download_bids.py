@@ -49,8 +49,6 @@ def download_bids(context, src_data=False, subjects=None, sessions=None, folders
             os.sys.exit(-1)
 
         # make sure dataset_description.json exists
-        # Is there a way to download the dataset_description.json file from the 
-        # platform instead of creating a generic stub?
         required_file = bids_path + '/dataset_description.json'
         if not op.exists(required_file):
             log.info('Creating missing '+required_file+'.')

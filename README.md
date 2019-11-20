@@ -1,5 +1,5 @@
 # bids-mriqc
-Gear that runs the [MRIQC](https://mriqc.readthedocs.io/en/stable/about.html) pipeline on BIDS-curated data.
+Gear that runs the [MRIQC](https://mriqc.readthedocs.io/en/stable/about.html) pipeline on [BIDS-curated data](https://bids.neuroimaging.io/).
 
 MRIQC calculates [Image Quality Metrics (IQMs)](https://mriqc.readthedocs.io/en/stable/measures.html#module-mriqc.qc) and saves them as JSON files and in HTML reports.
 

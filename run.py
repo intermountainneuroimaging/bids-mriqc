@@ -177,7 +177,7 @@ def set_up_data(context, log):
                      context.gear_dict['project_label'] + '"')
 
             # don't filter by subject or session, grab all
-            download_bids(context, folders=['anat', 'func', 'fmap'])
+            download_bids(context, folders=['anat', 'func'])
 
         elif context.gear_dict['run_level'] == 'subject':
 

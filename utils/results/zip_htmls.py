@@ -15,7 +15,10 @@ def zip_it_zip_it_good(context, name):
     files are automatically shown in another tab in the browser. These are
     saved at the top level of the output folder."""
 
-    dest_zip = os.path.join(context.output_dir,name + '.zip')
+    name_no_html = name[:-5]  # remove ".html" from end
+
+    dest_zip = os.path.join(context.output_dir,
+        name_no_html +  '_' + context.destination['id'] + '.html.zip')
 
     log.info('Creating viewable archive "' + dest_zip + '"')
 
@@ -58,7 +61,7 @@ def zip_htmls(context, path):
 
             for h_file in html_files:
                 os.rename(h_file, 'index.html')
-                zip_it_zip_it_good(context,context.output_dir + '/' + h_file)
+                zip_it_zip_it_good(context,h_file)
                 os.rename('index.html', h_file)
 
             # reestore if necessary

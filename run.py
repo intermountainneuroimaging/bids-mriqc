@@ -171,13 +171,15 @@ def set_up_data(context, log):
         # list folders: The list of folders to include (otherwise all folders) e.g. ['anat', 'func']
         # **kwargs: Additional arguments to pass to download_bids_dir
 
+        folders_to_load = ['anat', 'func', 'fmap']
+
         if context.gear_dict['run_level'] == 'project':
 
             log.info('Downloading BIDS for project "' + 
                      context.gear_dict['project_label'] + '"')
 
             # don't filter by subject or session, grab all
-            download_bids(context, folders=['anat', 'func'])
+            download_bids(context, folders=folders_to_load)
 
         elif context.gear_dict['run_level'] == 'subject':
 
@@ -187,7 +189,7 @@ def set_up_data(context, log):
             # filter by subject
             download_bids(context, 
                       subjects = [context.gear_dict['subject_code']],
-                      folders=['anat', 'func', 'fmap'])
+                      folders=folders_to_load)
 
         elif context.gear_dict['run_level'] == 'session':
 
@@ -197,7 +199,7 @@ def set_up_data(context, log):
             # filter by session
             download_bids(context, 
                       sessions = [context.gear_dict['session_label']],
-                      folders=['anat', 'func', 'fmap'])
+                      folders=folders_to_load)
 
         else:
             msg = 'This job is not being run at the project subject or session level'

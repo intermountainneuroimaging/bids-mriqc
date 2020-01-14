@@ -1,6 +1,6 @@
 {
   "name": "bids-mriqc",
-  "label": "MRIQC: Automatic prediction of quality and visual reporting of MRI scans in BIDS format",
+  "label": "BIDS MRIQC: Automatic prediction of quality and visual reporting of MRI scans in BIDS format",
   "description": "MRIQC (v0.15.1) extracts no-reference IQMs (image quality metrics) from structural (T1w and T2w) and functional MRI (magnetic resonance imaging) data.",
   "version": "1.0.8_0.15.1",
   "custom": {

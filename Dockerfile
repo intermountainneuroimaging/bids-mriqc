@@ -5,11 +5,11 @@ MAINTAINER Flywheel <support@flywheel.io>
 
 RUN apt-get update && apt-get install -y zip && rm -rf /var/lib/apt/lists/*
 
-RUN pip install flywheel-sdk==10.3.0 \
-        flywheel-bids==0.8.0 && \
-    rm -rf /root/.cache/pip
+RUN npm install -g bids-validator@1.4.0
 
-RUN npm install -g bids-validator@1.3.8
+RUN pip install flywheel-sdk==11.2.3 \
+        flywheel-bids==0.8.2 && \
+    rm -rf /root/.cache/pip
 
 # Make directory for flywheel spec (v0)
 ENV FLYWHEEL /flywheel/v0

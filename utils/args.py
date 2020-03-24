@@ -83,7 +83,7 @@ def build_command(context):
 
     log.debug('')
 
-    command = context.gear_dict['command']
+    command = context.gear_dict['command_line']
 
     param_list = context.gear_dict['param_list']
 
@@ -120,8 +120,6 @@ def build_command(context):
             # enumerated possibilities like v, vv, or vvv
             # e.g. replace "--verbose=vvv' with '-vvv'
             command[-1] = '-' + param_list[key]
-
-    return command
 
 
 # vi:set autoindent ts=4 sw=4 expandtab : See Vim, :help 'modeline'

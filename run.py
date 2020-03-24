@@ -63,6 +63,7 @@ def initialize(context):
     fw = context.client
     dest_container = fw.get(context.destination['id'])
     context.gear_dict['run_level'] = dest_container.parent.type
+    log.info('Running at the ' + context.gear_dict['run_level'] + ' level.')
 
     project_id = dest_container.parents.project
     context.gear_dict['project_id'] = project_id
@@ -74,7 +75,7 @@ def initialize(context):
     else:
         context.gear_dict['project_label'] = 'unknown_project'
         context.gear_dict['project_label_safe'] = 'unknown_project'
-        log.warning('Project label is ' + context.gear_dict['project_label'])
+    log.info('Project label is ' + context.gear_dict['project_label'])
 
     subject_id = dest_container.parents.subject
     context.gear_dict['subject_id'] = subject_id
@@ -86,7 +87,7 @@ def initialize(context):
     else:
         context.gear_dict['subject_code'] = 'unknown_subject'
         context.gear_dict['subject_code_safe'] = 'unknown_subject'
-        log.warning('Subject code is ' + context.gear_dict['subject_code'])
+    log.info('Subject code is ' + context.gear_dict['subject_code'])
 
     session_id = dest_container.parents.session
     context.gear_dict['session_id'] = session_id
@@ -98,7 +99,7 @@ def initialize(context):
     else:
         context.gear_dict['session_label'] = 'unknown_session'
         context.gear_dict['session_label_safe'] = 'unknown_session'
-        log.warning('Session label is ' + context.gear_dict['session_label'])
+    log.info('Session label is ' + context.gear_dict['session_label'])
 
     # Set first part of result zip file names based on the above file safe names
     set_zip_head(context)
@@ -140,7 +141,7 @@ def create_command(context, log):
         command.append('participant')
 
         # Put command into gear_dict so arguments can be added in args.
-        context.gear_dict['command'] = command
+        context.gear_dict['command_line'] = command
 
         # Process inputs, contextual values and build a dictionary of
         # key-value arguments specific for COMMAND
@@ -152,7 +153,8 @@ def create_command(context, log):
         args.validate(context)
 
         # Build final command-line (a list of strings)
-        command = args.build_command(context)
+        # result is put into context.gear_dict['command_line'] 
+        args.build_command(context)
 
     except Exception as e:
         context.gear_dict['errors'].append(e)
@@ -196,8 +198,9 @@ def set_up_data(context, log):
             log.info('Downloading BIDS for session "' + 
                      context.gear_dict['session_label'] + '"')
 
-            # filter by session
+            # only download data for this session AND this subject
             download_bids(context, 
+                      subjects = [context.gear_dict['subject_code']],
                       sessions = [context.gear_dict['session_label']],
                       folders=folders_to_load)
 
@@ -219,7 +222,7 @@ def set_up_data(context, log):
 def execute(context, log):
     try:
 
-        log.info('Command: ' + ' '.join(context.gear_dict['command']))
+        log.info('Command: ' + ' '.join(context.gear_dict['command_line']))
 
         # Don't run if there were errors or if this is a dry run
         ok_to_run = True
@@ -230,7 +233,7 @@ def execute(context, log):
             result.returncode = 1
             log.info('Command was NOT run because of previous errors.')
 
-        if context.config['gear-dry-run']:
+        elif context.config['gear-dry-run']:
             ok_to_run = False
             result = sp.CompletedProcess
             result.returncode = 0
@@ -241,7 +244,7 @@ def execute(context, log):
 
         if ok_to_run:
             # Run the actual command this gear was created for
-            result = sp.run(context.gear_dict['command'], 
+            result = sp.run(context.gear_dict['command_line'], 
                         env = context.gear_dict['environ'])
             log.debug(repr(result))
 
@@ -311,8 +314,7 @@ def execute(context, log):
             log.info(msg)
             ret = 1
 
-        log.info('BIDS App Gear is done.  Returning '+str(ret))
-        os.sys.exit(ret)
+        return ret
  
 
 if __name__ == '__main__':
@@ -323,9 +325,14 @@ if __name__ == '__main__':
 
     create_command(context, log)
 
-    set_up_data(context, log)
+    if len(context.gear_dict['errors']) == 0:
+        set_up_data(context, log)
 
-    execute(context, log)
+    ret = execute(context, log)
+
+    log.info('BIDS App Gear is done.  Returning '+str(ret))
+
+    sys.exit(ret)
 
 
 # vi:set autoindent ts=4 sw=4 expandtab : See Vim, :help 'modeline'

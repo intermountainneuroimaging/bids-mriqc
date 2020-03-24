@@ -17,9 +17,9 @@ def download_bids(context, src_data=False, subjects=None, sessions=None, folders
         one did not get downloaded.
     """
 
-    log.debug('')
-
     bids_path = context.gear_dict['bids_path'] 
+
+    log.info('Downloading into: ' + bids_path)
 
     # If BIDS was already downloaded, don't do it again
     # (this saves time when developing locally)
@@ -49,6 +49,8 @@ def download_bids(context, src_data=False, subjects=None, sessions=None, folders
             os.sys.exit(-1)
 
         # make sure dataset_description.json exists
+        # Is there a way to download the dataset_description.json file from the 
+        # platform instead of creating a generic stub?
         required_file = bids_path + '/dataset_description.json'
         if not op.exists(required_file):
             log.info('Creating missing '+required_file+'.')
@@ -57,7 +59,7 @@ def download_bids(context, src_data=False, subjects=None, sessions=None, folders
                 "Authors": [],
                 "BIDSVersion": "1.2.0",
                 "DatasetDOI": "",
-                "Funding": "",
+                "Funding": [],
                 "HowToAcknowledge": "",
                 "License": "",
                 "Name": "tome",
@@ -73,7 +75,19 @@ def download_bids(context, src_data=False, subjects=None, sessions=None, folders
 
     else:
         log.info('Using existing BIDS path '+bids_path)
-    
+
+    # Make sure "Funding" is a list
+    required_file = bids_path + '/dataset_description.json'
+    with open(required_file) as json_file:
+        data = json.load(json_file)
+        log.info('type of Funding is: '+ str(type(data["Funding"])))
+        if not isinstance(data['Funding'], list):
+            log.warning('data["Funding"] is not a list')
+            data['Funding'] = list(data['Funding'])
+            log.info('changed it to: '+ str(type(data["Funding"])))
+    with open(required_file, 'w') as outfile:
+        json.dump(data, outfile)
+
     context.gear_dict['bids_path'] = bids_path
 
 

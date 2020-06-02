@@ -11,7 +11,7 @@ This can run at the
 Inputs do not need to be provided because the mriqc pipeline will examine
 the BIDS formatted data directly at the given run level.
 
-For configuration options, please see [MRIQC command line interface](https://mriqc.readthedocs.io/en/stable/running.html#command-line-interface).  Arguments such as --n_procs --mem_gb and --ants-nthreads are set to use the maximum available as detected by MRIQC.
+For configuration options, please see [MRIQC command line interface](https://mriqc.readthedocs.io/en/stable/running.html#command-line-interface).  Note that arguments such as --n_procs --mem_gb and --ants-nthreads are set to use the maximum available as detected by MRIQC.
 
 This will create a zip archive for each individual html file to allow quick
 on-platform viewing: a click on the .html.zip file opens it an a new

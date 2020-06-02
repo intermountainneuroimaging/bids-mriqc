@@ -1,5 +1,3 @@
-# If you edit this file, please consider updating bids-app-template
-
 import subprocess as sp
 import os, os.path as op
 import logging
@@ -33,19 +31,12 @@ def get_inputs_and_args(context):
     for key in config.keys():
         if key[:5] == 'gear-':  # Skip any gear- parameters
             continue
-        # Use only those boolean values that are True
-        if type(config[key]) == bool:
-            if config[key]:
-                params[key] = True
-            # else ignore (could this cause a problem?)
-        else:
-            if len(key) == 1:
+        if type(config[key]) == str:
+            if config[key]:  # only use non-empty strings
                 params[key] = config[key]
-            else:
-                if config[key] != 0:  # if zero, skip and use defaults
-                    params[key] = config[key]
-                # else ignore (could this caus a problem?)
-    
+        else:
+            params[key] = config[key]
+
     context.gear_dict['param_list'] =  params
 
 
@@ -56,22 +47,17 @@ def validate(context):
     Gives errors (and raises exceptions) for settings that are violations 
     """
 
-    log.debug('')
-
     param_list = context.gear_dict['param_list']
-    # Test for input existence
-    # if not op.exists(params['i']):
-    #    raise Exception('Input File Not Found')
 
-    # Tests for specific problems/interactions that can raise exceptions or log warnings
-    # if ('betfparam' in params) and ('nononlinreg' in params):
-    #    if(params['betfparam']>0.0):
-    #        raise Exception('For betfparam values > zero, nonlinear registration is required.')
+    log.info('Checking param_list: ' + repr(param_list))
 
-    # if ('s' in params.keys()):
-    #    if params['s']==0:
-    #        log.warning(' The value of ' + str(params['s'] + \
-    #                    ' for -s may cause a singular matrix'))
+    if 'start-idx' in param_list:
+        if param_list['start-idx'] == 0:
+            del param_list['start-idx']
+
+    if 'stop-idx' in param_list:
+        if param_list['stop-idx'] == 0:
+            del param_list['stop-idx']
 
 
 def build_command(context):
@@ -83,7 +69,7 @@ def build_command(context):
 
     log.debug('')
 
-    command = context.gear_dict['command']
+    command = context.gear_dict['command_line']
 
     param_list = context.gear_dict['param_list']
 
@@ -120,8 +106,3 @@ def build_command(context):
             # enumerated possibilities like v, vv, or vvv
             # e.g. replace "--verbose=vvv' with '-vvv'
             command[-1] = '-' + param_list[key]
-
-    return command
-
-
-# vi:set autoindent ts=4 sw=4 expandtab : See Vim, :help 'modeline'

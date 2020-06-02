@@ -47,22 +47,17 @@ def validate(context):
     Gives errors (and raises exceptions) for settings that are violations 
     """
 
-    log.debug('')
-
     param_list = context.gear_dict['param_list']
-    # Test for input existence
-    # if not op.exists(params['i']):
-    #    raise Exception('Input File Not Found')
 
-    # Tests for specific problems/interactions that can raise exceptions or log warnings
-    # if ('betfparam' in params) and ('nononlinreg' in params):
-    #    if(params['betfparam']>0.0):
-    #        raise Exception('For betfparam values > zero, nonlinear registration is required.')
+    log.info('Checking param_list: ' + repr(param_list))
 
-    # if ('s' in params.keys()):
-    #    if params['s']==0:
-    #        log.warning(' The value of ' + str(params['s'] + \
-    #                    ' for -s may cause a singular matrix'))
+    if 'start-idx' in param_list:
+        if param_list['start-idx'] == 0:
+            del param_list['start-idx']
+
+    if 'stop-idx' in param_list:
+        if param_list['stop-idx'] == 0:
+            del param_list['stop-idx']
 
 
 def build_command(context):

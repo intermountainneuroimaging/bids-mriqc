@@ -1,338 +1,272 @@
 #!/usr/bin/env python3
-""" Run the gear: set up for and call command-line code """
+"""Run the gear: set up for and call command-line command."""
 
+import json
 import os
-import subprocess as sp
-import sys
-import logging
 import shutil
+import sys
+from pathlib import Path
 
-import flywheel
+import flywheel_gear_toolkit
+import psutil
+from flywheel_gear_toolkit.interfaces.command_line import (
+    build_command_list,
+    exec_command,
+)
+from flywheel_gear_toolkit.licenses.freesurfer import install_freesurfer_license
+from flywheel_gear_toolkit.utils.zip_tools import zip_output
 
-from utils import args
-
-from utils.bids.download_bids import *
-from utils.bids.validate_bids import *
-from utils.bids.tree_bids import *
-
-from utils.dicom.import_dicom_header_as_dict import *
-
-from utils.fly.custom_log import *
-from utils.fly.get_root_client import *
-from utils.fly.get_session_from_analysis_id import *
-from utils.fly.get_session_uids import *
-from utils.fly.load_manifest_json import *
-from utils.fly.make_file_name_safe import *
-from utils.fly.make_session_directory import *
-from utils.fly.set_session_label import *
-
-from utils.helpers.exists import *
-from utils.helpers.extract_return_paths import *
-from utils.helpers.set_environment import *
-
-from utils.results.set_zip_name import set_zip_head
+from utils.bids.download_run_level import download_bids_for_runlevel
+from utils.bids.run_level import get_run_level_and_hierarchy
+from utils.dry_run import pretend_it_ran
+from utils.fly.make_file_name_safe import make_file_name_safe
 from utils.results.zip_htmls import zip_htmls
-from utils.results.zip_output import zip_output
-from utils.results.zip_intermediate import zip_all_intermediate_output
-from utils.results.zip_intermediate import zip_intermediate_selected
+from utils.results.zip_intermediate import (
+    zip_all_intermediate_output,
+    zip_intermediate_selected,
+)
 
-import utils.dry_run
+GEAR = "bids-mriqc"
+REPO = "flywheel-apps"
+CONTAINER = f"{REPO}/{GEAR}]"
 
 
-def initialize(context):
+def main(gtk_context):
 
-    # Add manifest.json as the manifest_json attribute
-    setattr(context, 'manifest_json', load_manifest_json())
-
-    log = custom_log(context)
-
-    context.log_config() # not configuring the log but logging the config
-
-    # Instantiate custom gear dictionary to hold "gear global" info
-    context.gear_dict = {}
-
-    # The main command line command to be run:
-    context.gear_dict['COMMAND'] = 'mriqc'
+    log = gtk_context.log
 
     # Keep a list of errors and warning to print all in one place at end of log
     # Any errors will prevent the command from running and will cause exit(1)
-    context.gear_dict['errors'] = []  
-    context.gear_dict['warnings'] = []
+    errors = []
+    warnings = []
 
-    # Get level of run from destination's parent: project, subject or session
-    fw = context.client
-    dest_container = fw.get(context.destination['id'])
-    context.gear_dict['run_level'] = dest_container.parent.type
-    log.info('Running at the ' + context.gear_dict['run_level'] + ' level.')
+    # Given the destination container, figure out if running at the project,
+    # subject, or session level.
+    hierarchy = get_run_level_and_hierarchy(
+        gtk_context.client, gtk_context.destination["id"]
+    )
 
-    project_id = dest_container.parents.project
-    context.gear_dict['project_id'] = project_id
-    if project_id:
-        project = fw.get(project_id)
-        context.gear_dict['project_label'] = project.label
-        context.gear_dict['project_label_safe'] = \
-            make_file_name_safe(project.label, '_')
-    else:
-        context.gear_dict['project_label'] = 'unknown_project'
-        context.gear_dict['project_label_safe'] = 'unknown_project'
-    log.info('Project label is ' + context.gear_dict['project_label'])
+    # This is the label of the project, subject or session and is used
+    # as part of the name of the output files.
+    run_label = make_file_name_safe(hierarchy["run_label"])
 
-    subject_id = dest_container.parents.subject
-    context.gear_dict['subject_id'] = subject_id
-    if subject_id:
-        subject = fw.get(subject_id)
-        context.gear_dict['subject_code'] = subject.code
-        context.gear_dict['subject_code_safe'] = \
-            make_file_name_safe(subject.code, '_')
-    else:
-        context.gear_dict['subject_code'] = 'unknown_subject'
-        context.gear_dict['subject_code_safe'] = 'unknown_subject'
-    log.info('Subject code is ' + context.gear_dict['subject_code'])
+    # Output will be put into a directory named as the destination id.
+    # This allows the raw output to be deleted so that a zipped archive
+    # can be returned.
+    output_analysisid_dir = gtk_context.output_dir / gtk_context.destination["id"]
 
-    session_id = dest_container.parents.session
-    context.gear_dict['session_id'] = session_id
-    if session_id:
-        session = fw.get(session_id)
-        context.gear_dict['session_label'] = session.label
-        context.gear_dict['session_label_safe'] = \
-            make_file_name_safe(session.label, '_')
-    else:
-        context.gear_dict['session_label'] = 'unknown_session'
-        context.gear_dict['session_label_safe'] = 'unknown_session'
-    log.info('Session label is ' + context.gear_dict['session_label'])
+    # get # cpu's to set -openmp
+    os_cpu_count = str(os.cpu_count())
+    log.info("os.cpu_count() = %s", os_cpu_count)
+    n_cpus = gtk_context.config.get("n_cpus")
+    if n_cpus:
+        if n_cpus > os_cpu_count:
+            log.warning("n_cpus > number available, using %d", os_cpu_count)
+            gtk_context.config["n_cpus"] = os_cpu_count
+        elif n_cpus == 0:
+            log.info("n_cpus == 0, using %d (maximum available)", os_cpu_count)
+            gtk_context.config["n_cpus"] = os_cpu_count
+    else:  # Default is to use all cpus available
+        gtk_context.config["n_cpus"] = os_cpu_count  # zoom zoom
 
-    # Set first part of result zip file names based on the above file safe names
-    set_zip_head(context)
+    mem_gb = psutil.virtual_memory().available / (1024 ** 3)
+    log.info("psutil.virtual_memory().available= {:4.1f} GiB".format(mem_gb))
 
-    # set the usual BIDS path:
-    bids_path = os.path.join(context.work_dir, 'bids')
-    context.gear_dict['bids_path'] = bids_path
-
-    # in the output/ directory, add extra analysis_id directory name for easy
-    #  zipping of final outputs to return.
-    context.gear_dict['output_analysisid_dir'] = \
-        context.output_dir + '/' + context.destination['id']
-
-    # grab environment for gear
-    with open('/tmp/gear_environ.json', 'r') as f:
+    # grab environment for gear (saved in Dockerfile)
+    with open("/tmp/gear_environ.json", "r") as f:
         environ = json.load(f)
-        context.gear_dict['environ'] = environ
 
         # Add environment to log if debugging
-        kv = ''
+        kv = ""
         for k, v in environ.items():
-            kv += k + '=' + v + ' '
-        log.debug('Environment: ' + kv)
+            kv += k + "=" + v + " "
+        log.debug("Environment: " + kv)
 
-    return log
+    # get config for command by skipping gear config parameters
+    command_config = {}
+    for key, val in gtk_context.config.items():
+        if not key.startswith("gear-"):
+            command_config[key] = val
+    # print("command_config:", json.dumps(command_config, indent=4))
 
+    # Validate the command parameter dictionary - make sure everything is
+    # ready to run so errors will appear before launching the actual gear
+    # code.  Add descriptions of problems to errors & warnings lists.
+    # print("gtk_context.config:", json.dumps(gtk_context.config, indent=4))
 
-def create_command(context, log):
+    # The main command line command to be run:
+    command = ["mriqc"]
 
-    # Create the command and validate the given arguments
+    # This is also used as part of the name of output files
+    command_name = make_file_name_safe(command[0])
+
+    # 3 positional args: bids path, output dir, 'participant'
+    # This should be done here in case there are nargs='*' arguments
+    # These follow the BIDS Apps definition (https://github.com/BIDS-Apps)
+    command.append(str(gtk_context.work_dir / "bids"))
+    command.append(str(output_analysisid_dir))
+    command.append("participant")
+
+    command = build_command_list(command, command_config)
+    # print(command)
+
+    for ii, cmd in enumerate(command):
+        if cmd.startswith("--verbose"):
+            # handle a 'count' argparse argument where manifest gives
+            # enumerated possibilities like v, vv, or vvv
+            # e.g. replace "--verbose=vvv' with '-vvv'
+            command[ii] = cmd.split("=")[1]
+
+    if len(errors) == 0:
+
+        # Create HTML file that shows BIDS "Tree" like output
+        tree = True
+        tree_title = f"{command_name} BIDS Tree"
+
+        # Whether or not to include src data (e.g. dicoms) when downloading BIDS
+        src_data = False
+
+        # Limit download to specific folders? e.g. ['anat','func','fmap']
+        # when downloading BIDS
+        folders = ["anat", "func"]
+
+        error_code = download_bids_for_runlevel(
+            gtk_context,
+            hierarchy,
+            tree=tree,
+            tree_title=tree_title,
+            src_data=src_data,
+            folders=folders,
+            dry_run=gtk_context.config.get("gear-dry-run"),
+            do_validate_bids=gtk_context.config.get("gear-run-bids-validation"),
+        )
+        if error_code > 0 and not gtk_context.config.get("gear-ignore-bids-errors"):
+            errors.append(f"BIDS Error(s) detected.  Did not run {CONTAINER}")
+
+        # now that work/bids/ exists, copy in the ignore file
+        bidsignore_path = gtk_context.get_input_path("bidsignore")
+        if bidsignore_path:
+            shutil.copy(bidsignore_path, "work/bids/.bidsignore")
+            log.info("Installed .bidsignore in work/bids/")
+
+    # Don't run if there were errors or if this is a dry run
+    ok_to_run = True
+
+    if len(errors) > 0:
+        ok_to_run = False
+        returncode = 1
+        log.info("Command was NOT run because of previous errors.")
+
+    if gtk_context.config.get("gear-dry-run"):
+        ok_to_run = False
+        returncode = 0
+        e = "gear-dry-run is set: Command was NOT run."
+        log.warning(e)
+        warnings.append(e)
+        pretend_it_ran(gtk_context)
+
     try:
-
-        # Set the actual gear command:
-        command = [context.gear_dict['COMMAND']]
-
-        # These follow the BIDS Apps definition (https://github.com/BIDS-Apps)
-        command.append(context.gear_dict['bids_path'])
-        command.append(context.gear_dict['output_analysisid_dir'])
-        command.append('participant')
-
-        # Put command into gear_dict so arguments can be added in args.
-        context.gear_dict['command_line'] = command
-
-        # Process inputs, contextual values and build a dictionary of
-        # key-value arguments specific for COMMAND
-        args.get_inputs_and_args(context)
-
-        # Validate the command parameter dictionary - make sure everything is 
-        # ready to run so errors will appear before launching the actual gear 
-        # code.  Raises Exception on fail
-        args.validate(context)
-
-        # Build final command-line (a list of strings)
-        # result is put into context.gear_dict['command_line'] 
-        args.build_command(context)
-
-    except Exception as e:
-        context.gear_dict['errors'].append(e)
-        log.critical(e)
-        log.exception('Error in creating and validating command.',)
-
-
-def set_up_data(context, log):
-    # Set up and validate data to be used by command
-    try:
-
-        # Download bids for the current session 
-        # bool src_data: Whether or not to include src data (e.g. dicoms) default: False
-        # list subjects: The list of subjects to include (via subject code) otherwise all subjects
-        # list sessions: The list of sessions to include (via session label) otherwise all sessions
-        # list folders: The list of folders to include (otherwise all folders) e.g. ['anat', 'func']
-        # **kwargs: Additional arguments to pass to download_bids_dir
-
-        folders_to_load = ['anat', 'func']
-
-        if context.gear_dict['run_level'] == 'project':
-
-            log.info('Downloading BIDS for project "' + 
-                     context.gear_dict['project_label'] + '"')
-
-            # don't filter by subject or session, grab all
-            download_bids(context, folders=folders_to_load)
-
-        elif context.gear_dict['run_level'] == 'subject':
-
-            log.info('Downloading BIDS for subject "' + 
-                     context.gear_dict['subject_code'] + '"')
-
-            # filter by subject
-            download_bids(context, 
-                      subjects = [context.gear_dict['subject_code']],
-                      folders=folders_to_load)
-
-        elif context.gear_dict['run_level'] == 'session':
-
-            log.info('Downloading BIDS for session "' + 
-                     context.gear_dict['session_label'] + '"')
-
-            # only download data for this session AND this subject
-            download_bids(context, 
-                      subjects = [context.gear_dict['subject_code']],
-                      sessions = [context.gear_dict['session_label']],
-                      folders=folders_to_load)
-
-        else:
-            msg = 'This job is not being run at the project subject or session level'
-            raise TypeError(msg)
-
-
-        # Validate Bids file heirarchy
-        # Bids validation on a phantom tree may be occuring soon
-        validate_bids(context)
-
-    except Exception as e:
-        context.gear_dict['errors'].append(e)
-        log.critical(e)
-        log.exception('Error in BIDS download and validation.',)
-
-
-def execute(context, log):
-    try:
-
-        log.info('Command: ' + ' '.join(context.gear_dict['command_line']))
-
-        # Don't run if there were errors or if this is a dry run
-        ok_to_run = True
-
-        if len(context.gear_dict['errors']) > 0:
-            ok_to_run = False
-            result = sp.CompletedProcess
-            result.returncode = 1
-            log.info('Command was NOT run because of previous errors.')
-
-        elif context.config['gear-dry-run']:
-            ok_to_run = False
-            result = sp.CompletedProcess
-            result.returncode = 0
-            e = 'gear-dry-run is set: Command was NOT run.'
-            log.warning(e)
-            context.gear_dict['warnings'].append(e)
-            utils.dry_run.pretend_it_ran(context)
 
         if ok_to_run:
-            # Run the actual command this gear was created for
-            result = sp.run(context.gear_dict['command_line'], 
-                        env = context.gear_dict['environ'])
-            log.debug(repr(result))
 
-        log.info('Return code: ' + str(result.returncode))
+            returncode = 0
 
-        if result.returncode == 0:
-            log.info('Command successfully executed!')
+            # Create output directory
+            log.info("Creating output directory %s", output_analysisid_dir)
+            Path(output_analysisid_dir).mkdir()
 
-        else:
-            log.info('Command failed.')
+            # This is what it is all about
+            exec_command(command, environ=environ)
 
-    except Exception as e:
-        context.gear_dict['errors'].append(e)
-        log.critical(e)
-        log.exception('Unable to execute command.')
+    except RuntimeError as exc:
+        returncode = 1
+        errors.append(exc)
+        log.critical(exc)
+        log.exception("Unable to execute command.")
 
     finally:
 
         # Cleanup, move all results to the output directory
-        path = context.gear_dict['output_analysisid_dir']
-        zip_htmls(context, path)
 
-        zip_output(context)
+        # zip entire output/<analysis_id> folder into
+        #  <gear_name>_<project|subject|session label>_<analysis.id>.zip
+        zip_file_name = (
+            gtk_context.manifest["name"]
+            + f"_{run_label}_{gtk_context.destination['id']}.zip"
+        )
+        zip_output(
+            str(gtk_context.output_dir),
+            gtk_context.destination["id"],
+            zip_file_name,
+            dry_run=False,
+            exclude_files=None,
+        )
+
+        # zip any .html files in output/<analysis_id>/
+        zip_htmls(gtk_context, output_analysisid_dir)
 
         # possibly save ALL intermediate output
-        if context.config['gear-save-intermediate-output']:
-            zip_all_intermediate_output(context)
+        if gtk_context.config.get("gear-save-intermediate-output"):
+            zip_all_intermediate_output(gtk_context, run_label)
 
         # possibly save intermediate files and folders
-        zip_intermediate_selected(context)
+        zip_intermediate_selected(gtk_context, run_label)
 
         # clean up: remove output that was zipped
-        if os.path.exists(context.gear_dict['output_analysisid_dir']):
-            if not context.config['gear-keep-output']:
+        if Path(output_analysisid_dir).exists():
+            if not gtk_context.config.get("gear-keep-output"):
 
-                shutil.rmtree(context.gear_dict['output_analysisid_dir'])
-                log.debug('removing output directory "' + 
-                          context.gear_dict['output_analysisid_dir'] + '"')
+                log.debug('removing output directory "%s"', str(output_analysisid_dir))
+                shutil.rmtree(output_analysisid_dir)
 
             else:
-                log.info('NOT removing output directory "' + 
-                          context.gear_dict['output_analysisid_dir'] + '"')
+                log.info(
+                    'NOT removing output directory "%s"', str(output_analysisid_dir)
+                )
 
         else:
-            log.info('Output directory does not exist so it cannot be removed')
+            log.info("Output directory does not exist so it cannot be removed")
 
-        ret = result.returncode
-
-        if len(context.gear_dict['warnings']) > 0 :
-            msg = 'Previous warnings:\n'
-            for err in context.gear_dict['warnings']:
-                if str(type(err)).split("'")[1] == 'str':
+        # Report errors and warnings at the end of the log so they can be easily seen.
+        if len(warnings) > 0:
+            msg = "Previous warnings:\n"
+            for err in warnings:
+                if str(type(err)).split("'")[1] == "str":
                     # show string
-                    msg += '  Warning: ' + str(err) + '\n'
+                    msg += "  Warning: " + str(err) + "\n"
                 else:  # show type (of warning) and warning message
-                    msg += '  ' + str(type(err)).split("'")[1] + ': ' + str(err) + '\n'
+                    err_type = str(type(err)).split("'")[1]
+                    msg += f"  {err_type}: {str(err)}\n"
             log.info(msg)
 
-        if len(context.gear_dict['errors']) > 0 :
-            msg = 'Previous errors:\n'
-            for err in context.gear_dict['errors']:
-                if str(type(err)).split("'")[1] == 'str':
+        if len(errors) > 0:
+            msg = "Previous errors:\n"
+            for err in errors:
+                if str(type(err)).split("'")[1] == "str":
                     # show string
-                    msg += '  Error msg: ' + str(err) + '\n'
+                    msg += "  Error msg: " + str(err) + "\n"
                 else:  # show type (of error) and error message
-                    msg += '  ' + str(type(err)).split("'")[1] + ': ' + str(err) + '\n'
+                    err_type = str(type(err)).split("'")[1]
+                    msg += f"  {err_type}: {str(err)}\n"
             log.info(msg)
-            ret = 1
+            returncode = 1
 
-        return ret
- 
-
-if __name__ == '__main__':
-
-    context = flywheel.GearContext()
-
-    log = initialize(context)
-
-    create_command(context, log)
-
-    if len(context.gear_dict['errors']) == 0:
-        set_up_data(context, log)
-
-    ret = execute(context, log)
-
-    log.info('BIDS App Gear is done.  Returning '+str(ret))
-
-    sys.exit(ret)
+    return returncode
 
 
-# vi:set autoindent ts=4 sw=4 expandtab : See Vim, :help 'modeline'
+if __name__ == "__main__":
+
+    gtk_context = flywheel_gear_toolkit.GearToolkitContext()
+
+    # Setup basic logging and log the configuration for this job
+    if gtk_context["gear-log-level"] == "INFO":
+        gtk_context.init_logging("info")
+    else:
+        gtk_context.init_logging("debug")
+    gtk_context.log_config()
+
+    exit_status = main(gtk_context)
+
+    gtk_context.log.info("%s Gear is done.  Returning %s", CONTAINER, exit_status)
+
+    sys.exit(exit_status)

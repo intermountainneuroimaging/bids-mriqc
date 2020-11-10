@@ -307,7 +307,7 @@ def test_download_bids_for_runlevel_unknown_acqusition_detected(tmp_path, caplog
                     dry_run=True,
                 )
 
-    assert len(caplog.records) == 5
+    assert len(caplog.records) == 8
     assert 'acquisition "unknown acqusition"' in caplog.records[3].message
 
 

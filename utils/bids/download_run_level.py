@@ -3,6 +3,7 @@
 
 import json
 import logging
+import shutil
 from pathlib import Path
 
 from flywheel import ApiException
@@ -44,13 +45,13 @@ def fix_dataset_description(bids_path):
     converting it to a list and then writing the file back out.
 
     Args:
-        bids_path (string): path to bids formatted data.
+        bids_path (path): path to bids formatted data.
 
     Note:
         If dataset_description.json does not exist, it will be created
     """
 
-    validator_file = Path(bids_path) / "dataset_description.json"
+    validator_file = bids_path / "dataset_description.json"
 
     need_to_write = False
 
@@ -98,9 +99,11 @@ def download_bids_for_runlevel(
             run_label, group, project, subject, session, and
             acquisition.
         tree (boolean): create HTML page in output showing 'tree' of bids data
+        tree_title (str): Title to put in HTML file that shows the tree
         src_data (boolean): download source data (dicoms) as well
-        folders (list): only include the listed folders, if empty include all.
+        folders (list): only include the listed folders, if empty include all
         dry_run (boolean): don't actually download data if True
+        do_validate_bids (boolean): run bids-validator after downloading bids data
 
     Returns:
         err_code (int): tells a bit about the error:
@@ -125,7 +128,7 @@ def download_bids_for_runlevel(
 
     run_level = hierarchy["run_level"]
 
-    # Show the complete destination hierarchy in the tree html ouput for
+    # Show the complete destination hierarchy in the tree html output for
     # clarity
     extra_tree_text += f"run_level is {run_level}\n"
     for key, val in hierarchy.items():
@@ -140,6 +143,8 @@ def download_bids_for_runlevel(
     else:
         extra_tree_text += f'  {"dry run?":<18}: No\n'
     extra_tree_text += "\n"
+
+    err_code = 0  # assume no error
 
     if run_level == "no_destination":
         msg = "Destination does not exist."
@@ -178,7 +183,9 @@ def download_bids_for_runlevel(
                 log.info("Not downloading source data.")
 
             if dry_run:
-                log.info("Dry run is set.  No data will be downloaded.")
+                log.info(
+                    "Dry run is set.  NO DATA WILL BE DOWNLOADED even though it will say it is downloading later in the log.  Believe me now, not later."
+                )
             else:
                 log.info("Dry run is NOT set.  Data WILL be downloaded.")
 
@@ -187,7 +194,7 @@ def download_bids_for_runlevel(
             else:
                 log.info("Downloading BIDS data in all folders.")
 
-            BIDS_DIR = Path(gtk_context.work_dir) / "bids"
+            bids_dir = Path(gtk_context.work_dir) / "bids"
 
             if run_level == "project":
 
@@ -195,9 +202,9 @@ def download_bids_for_runlevel(
                     'Downloading BIDS for project "%s"', hierarchy["project_label"]
                 )
 
-                if Path(BIDS_DIR).exists():
-                    bids_path = BIDS_DIR
-                    log.info(f"Not actually downloading it because {BIDS_DIR} exists")
+                if Path(bids_dir).exists():
+                    bids_path = bids_dir
+                    log.info(f"Not actually downloading it because {bids_dir} exists")
                 else:
                     # don't filter by subject or session, grab all
                     bids_path = gtk_context.download_project_bids(
@@ -210,9 +217,9 @@ def download_bids_for_runlevel(
                     'Downloading BIDS for subject "%s"', hierarchy["subject_label"]
                 )
 
-                if Path(BIDS_DIR).exists():
-                    bids_path = BIDS_DIR
-                    log.info(f"Not actually downloading it because {BIDS_DIR} exists")
+                if Path(bids_dir).exists():
+                    bids_path = bids_dir
+                    log.info(f"Not actually downloading it because {bids_dir} exists")
                 else:
                     # only download this subject
                     bids_path = gtk_context.download_project_bids(
@@ -228,9 +235,9 @@ def download_bids_for_runlevel(
                     'Downloading BIDS for session "%s"', hierarchy["session_label"]
                 )
 
-                if Path(BIDS_DIR).exists():
-                    bids_path = BIDS_DIR
-                    log.info(f"Not actually downloading it because {BIDS_DIR} exists")
+                if Path(bids_dir).exists():
+                    bids_path = bids_dir
+                    log.info(f"Not actually downloading it because {bids_dir} exists")
                 else:
                     # only download data for this session AND this subject
                     bids_path = gtk_context.download_project_bids(
@@ -243,7 +250,7 @@ def download_bids_for_runlevel(
 
             elif run_level == "acquisition":
 
-                if hierarchy["acquisition_label"] == "unknown acqusition":
+                if hierarchy["acquisition_label"] == "unknown acquisition":
                     msg = (
                         'Cannot download BIDS for acquisition "'
                         + hierarchy["acquisition_label"]
@@ -260,10 +267,10 @@ def download_bids_for_runlevel(
                         hierarchy["acquisition_label"],
                     )
 
-                    bids_path = BIDS_DIR
-                    if Path(BIDS_DIR).exists():
+                    bids_path = bids_dir
+                    if Path(bids_dir).exists():
                         log.info(
-                            "Not actually downloading it because " f"{BIDS_DIR} exists"
+                            "Not actually downloading it because " f"{bids_dir} exists"
                         )
                     else:
                         # only download acquisition data
@@ -271,7 +278,7 @@ def download_bids_for_runlevel(
                             gtk_context.client,
                             gtk_context.destination["id"],
                             "acquisition",
-                            BIDS_DIR,
+                            bids_dir,
                             src_data=src_data,
                             folders=folders,
                             dry_run=dry_run,
@@ -287,9 +294,9 @@ def download_bids_for_runlevel(
                 bids_path = None
                 err_code = 20
 
-        except BIDSExportError as bidserr:
-            log.critical(bidserr, exc_info=True)
-            extra_tree_text += f"{bidserr}\n"
+        except BIDSExportError as bids_err:
+            log.critical(bids_err, exc_info=True)
+            extra_tree_text += f"{bids_err}\n"
             bids_path = None
             err_code = 21
 
@@ -306,6 +313,12 @@ def download_bids_for_runlevel(
 
             # Make sure "Funding" is a list or validation will fail
             fix_dataset_description(bids_path)
+
+            # now that work/bids/ exists, copy in the ignore file
+            bidsignore_path = gtk_context.get_input_path("bidsignore")
+            if bidsignore_path:
+                shutil.copy(bidsignore_path, "work/bids/.bidsignore")
+                log.info("Installed .bidsignore in work/bids/")
 
             try:
                 if do_validate_bids:

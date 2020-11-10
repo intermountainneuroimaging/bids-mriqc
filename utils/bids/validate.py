@@ -40,7 +40,6 @@ import json
 import logging
 import pprint
 import subprocess as sp
-from pathlib import Path
 
 log = logging.getLogger(__name__)
 
@@ -150,7 +149,7 @@ def validate_bids(bids_path):
     non-zero if there was an error.
 
     Args:
-        bids_path (str): path to top directory of BIDS data.
+        bids_path (path): path to top directory of BIDS data.
 
     Returns:
         int: err_code
@@ -166,7 +165,7 @@ def validate_bids(bids_path):
 
     num_bids_errors = -1  # impossible value
 
-    out_path = Path(bids_path) / ".." / "validator.output.json"
+    out_path = bids_path / ".." / "validator.output.json"
 
     err_code, bids_output = call_validate_bids(bids_path, out_path)
 

@@ -382,31 +382,31 @@ def main(gtk_context):
                 "tags": [run_label, destination_id],
             },
         }
-        metadata = {
-            "acquisition": {  # <-- this should be info on the analysis!
-                "files": [
-                    {
-                        "name": report_filename,
-                        "type": "qa",
-                        "modality": "MR",
-                        "classification": config_classification,
-                        "info": deriv_info,
-                    },
-                    {
-                        "name": zip_filename,
-                        "type": "qa",
-                        "modality": "MR",
-                        "classification": config_classification,
-                    },
-                    {
-                        "name": deriv_filename,
-                        "type": "qa",
-                        "modality": "MR",
-                        "classification": config_classification,
-                    },
-                ]
-            }
-        }
+        # metadata = {
+        #    "acquisition": {  # <-- this should be info on the analysis!
+        #        "files": [
+        #            {
+        #                "name": report_filename,
+        #                "type": "qa",
+        #                "modality": "MR",
+        #                "classification": config_classification,
+        #                "info": deriv_info,
+        #            },
+        #            {
+        #                "name": zip_filename,
+        #                "type": "qa",
+        #                "modality": "MR",
+        #                "classification": config_classification,
+        #            },
+        #            {
+        #                "name": deriv_filename,
+        #                "type": "qa",
+        #                "modality": "MR",
+        #                "classification": config_classification,
+        #            },
+        #        ]
+        #    }
+        # }
 
         if len(metadata["analysis"]["info"]) > 0:
             with open(f"{gtk_context.output_dir}/.metadata.json", "w") as fff:

@@ -12,13 +12,13 @@ def store_iqms(context, destination_id):
     MRIQC calculates 56 anatomical features and numerous functional
     features to characterize quality. These features are called Image
     Quality Metrics (IQMs).
-    Grab the IQM values from the analysis and add them to .metadata.json
+    Grab the IQM values from the analysis and add them to metadata.json
     for inclusion on the "Custom Information" tab as a table.
     Args:
         context (Geartoolkit context): Flywheel gear context
         destination_id (id): analysis container within Flywheel
     Returns
-        nested dict to convert to .metadata.json
+        nested dict to add to metadata.json
     """
 
     hierarchy = get_run_level_and_hierarchy(context.client, destination_id)
@@ -46,9 +46,13 @@ def store_iqms(context, destination_id):
 
 def _create_nested_metadata(analysis_to_parse):
     """
-
+    Sift through the json files that correspond with different types of scans. Keep the
+    fields associated with IQMs for MRIQC. Reorder the fields for export to metadata.json
     Args:
-
+        analysis_to_parse (dict): converted from original analyses' output json summaries
+    Returns:
+        add_metadata (nested dict): dictionary to append to metadata under the analysis >
+        info > sorting_classifier (filename) entry
     """
     toss_keys = [k for k in analysis_to_parse.keys() if k.startswith("__")]
     toss_keys.extend(["bids_meta", "provenance"])

@@ -27,7 +27,6 @@ def store_iqms(context, destination_id):
     path_to_jsons = op.join(
         context.output_dir,
         destination_id,
-        "*",
         hierarchy["subject_label"],
         hierarchy["session_label"],
         "*/*.json",

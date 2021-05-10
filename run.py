@@ -24,6 +24,7 @@ from utils.results.zip_intermediate import (
     zip_all_intermediate_output,
     zip_intermediate_selected,
 )
+from utils.results.store_iqms import store_iqms
 
 GEAR = "bids-mriqc"
 REPO = "flywheel-apps"
@@ -382,6 +383,7 @@ def main(gtk_context):
                 "tags": [run_label, destination_id],
             },
         }
+        metadata.update(store_iqms(gtk_context, destination_id))
         # metadata = {
         #    "acquisition": {  # <-- this should be info on the analysis!
         #        "files": [
@@ -422,5 +424,5 @@ def main(gtk_context):
 
 
 if __name__ == "__main__":
-
-    sys.exit(main(flywheel_gear_toolkit.GearToolkitContext()))
+    with flywheel_gear_toolkit.GearToolkitContext(config_path='./config.json') as context:
+        sys.exit(main(context))

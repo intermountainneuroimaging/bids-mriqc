@@ -281,66 +281,6 @@ def main(gtk_context):
         log.exception("Unable to execute command.")
 
     finally:
-
-        # Cleanup, move all results to the output directory
-
-        # zip entire output/<analysis_id> folder into
-        #  <gear_name>_<project|subject|session label>_<analysis.id>.zip
-        zip_file_name = (
-            gtk_context.manifest["name"] + f"_{run_label}_{destination_id}.zip"
-        )
-        zip_output(
-            str(gtk_context.output_dir),
-            destination_id,
-            zip_file_name,
-            dry_run=False,
-            exclude_files=None,
-        )
-
-        # zip any .html files in output/<analysis_id>/
-        zip_htmls(gtk_context, output_analysis_id_dir)
-
-        # possibly save ALL intermediate output
-        if config.get("gear-save-intermediate-output"):
-            zip_all_intermediate_output(gtk_context, run_label)
-
-        # possibly save intermediate files and folders
-        zip_intermediate_selected(gtk_context, run_label)
-
-        # clean up: remove output that was zipped
-        if Path(output_analysis_id_dir).exists():
-            if not config.get("gear-keep-output"):
-
-                log.debug('removing output directory "%s"', str(output_analysis_id_dir))
-                shutil.rmtree(output_analysis_id_dir)
-
-            else:
-                log.info(
-                    'NOT removing output directory "%s"', str(output_analysis_id_dir)
-                )
-
-        else:
-            log.info("Output directory does not exist so it cannot be removed")
-
-        # Report errors and warnings at the end of the log so they can be easily seen.
-        if len(warnings) > 0:
-            msg = "Previous warnings:\n"
-            for warn in warnings:
-                msg += "  Warning: " + str(warn) + "\n"
-            log.info(msg)
-
-        if len(errors) > 0:
-            msg = "Previous errors:\n"
-            for err in errors:
-                if str(type(err)).split("'")[1] == "str":
-                    # show string
-                    msg += "  Error msg: " + str(err) + "\n"
-                else:  # show type (of error) and error message
-                    err_type = str(type(err)).split("'")[1]
-                    msg += f"  {err_type}: {str(err)}\n"
-            log.info(msg)
-            return_code = 1
-
         # save .metadata file
         metadata = {
             "project": {
@@ -409,6 +349,66 @@ def main(gtk_context):
         #        ]
         #    }
         # }
+
+        # Cleanup, move all results to the output directory
+
+        # zip entire output/<analysis_id> folder into
+        #  <gear_name>_<project|subject|session label>_<analysis.id>.zip
+        zip_file_name = (
+            gtk_context.manifest["name"] + f"_{run_label}_{destination_id}.zip"
+        )
+        zip_output(
+            str(gtk_context.output_dir),
+            destination_id,
+            zip_file_name,
+            dry_run=False,
+            exclude_files=None,
+        )
+
+        # zip any .html files in output/<analysis_id>/
+        zip_htmls(gtk_context, output_analysis_id_dir)
+
+        # possibly save ALL intermediate output
+        if config.get("gear-save-intermediate-output"):
+            zip_all_intermediate_output(gtk_context, run_label)
+
+        # possibly save intermediate files and folders
+        zip_intermediate_selected(gtk_context, run_label)
+
+        # clean up: remove output that was zipped
+        if Path(output_analysis_id_dir).exists():
+            if not config.get("gear-keep-output"):
+
+                log.debug('removing output directory "%s"', str(output_analysis_id_dir))
+                shutil.rmtree(output_analysis_id_dir)
+
+            else:
+                log.info(
+                    'NOT removing output directory "%s"', str(output_analysis_id_dir)
+                )
+
+        else:
+            log.info("Output directory does not exist so it cannot be removed")
+
+        # Report errors and warnings at the end of the log so they can be easily seen.
+        if len(warnings) > 0:
+            msg = "Previous warnings:\n"
+            for warn in warnings:
+                msg += "  Warning: " + str(warn) + "\n"
+            log.info(msg)
+
+        if len(errors) > 0:
+            msg = "Previous errors:\n"
+            for err in errors:
+                if str(type(err)).split("'")[1] == "str":
+                    # show string
+                    msg += "  Error msg: " + str(err) + "\n"
+                else:  # show type (of error) and error message
+                    err_type = str(type(err)).split("'")[1]
+                    msg += f"  {err_type}: {str(err)}\n"
+            log.info(msg)
+            return_code = 1
+
 
         if len(metadata["analysis"]["info"]) > 0:
             with open(f"{gtk_context.output_dir}/.metadata.json", "w") as fff:

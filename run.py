@@ -328,10 +328,10 @@ def main(gtk_context):
             },
         }
         if dry_run:
-            log.info('Just dry run: no additional data.')
+             log.info('Just dry run: no additional data.')
         else:
             try:
-                metadata.updatestore_iqms(gtk_context, destination_id)
+                metadata.update(store_iqms(hierarchy, output_analysis_id_dir))
             except Exception:
                 log.debug(
                     "Check store_iqms. Likely did not have file path to analyses... so no extra results found."
@@ -436,7 +436,5 @@ def main(gtk_context):
 
 
 if __name__ == "__main__":
-    with flywheel_gear_toolkit.GearToolkitContext(
-        config_path="./config.json"
-    ) as context:
+    with flywheel_gear_toolkit.GearToolkitContext() as context:
         sys.exit(main(context))

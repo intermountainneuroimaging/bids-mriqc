@@ -271,7 +271,11 @@ def main(gtk_context):
 
             # This is what it is all about
             exec_command(
-                command, environ=environ, dry_run=dry_run, shell=True, cont_output=True,
+                command,
+                environ=environ,
+                dry_run=dry_run,
+                shell=True,
+                cont_output=True,
             )
 
     except RuntimeError as exc:
@@ -323,7 +327,13 @@ def main(gtk_context):
                 "tags": [run_label, destination_id],
             },
         }
-        metadata.update(store_iqms(gtk_context, destination_id))
+        more_metadata = store_iqms(gtk_context, destination_id)
+        if more_metadata:
+            metadata.update(more_metadata)
+        else:
+            log.debug(
+                "Check store_iqms. Likely did not have file path to analyses... so no extra results found."
+            )
         # metadata = {
         #    "acquisition": {  # <-- this should be info on the analysis!
         #        "files": [
@@ -409,7 +419,6 @@ def main(gtk_context):
             log.info(msg)
             return_code = 1
 
-
         if len(metadata["analysis"]["info"]) > 0:
             with open(f"{gtk_context.output_dir}/.metadata.json", "w") as fff:
                 json.dump(metadata, fff)
@@ -424,5 +433,7 @@ def main(gtk_context):
 
 
 if __name__ == "__main__":
-    with flywheel_gear_toolkit.GearToolkitContext(config_path='./config.json') as context:
+    with flywheel_gear_toolkit.GearToolkitContext(
+        config_path="./config.json"
+    ) as context:
         sys.exit(main(context))

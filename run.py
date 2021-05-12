@@ -332,8 +332,9 @@ def main(gtk_context):
             metadata.update(more_metadata)
         else:
             log.debug(
-                "Check store_iqms. Likely did not have file path to analyses... so no extra results found."
+                "Check store_iqms. Likely a dry run or did not have file path to analyses... so no extra results found."
             )
+            log.info('No additional data added to metadata.')
         # metadata = {
         #    "acquisition": {  # <-- this should be info on the analysis!
         #        "files": [

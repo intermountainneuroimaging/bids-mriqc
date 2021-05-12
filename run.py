@@ -327,14 +327,16 @@ def main(gtk_context):
                 "tags": [run_label, destination_id],
             },
         }
-        more_metadata = store_iqms(gtk_context, destination_id)
-        if more_metadata:
-            metadata.update(more_metadata)
+        if dry_run:
+            log.info('Just dry run: no additional data.')
         else:
-            log.debug(
-                "Check store_iqms. Likely a dry run or did not have file path to analyses... so no extra results found."
-            )
-            log.info('No additional data added to metadata.')
+            try:
+                metadata.updatestore_iqms(gtk_context, destination_id)
+            except Exception:
+                log.debug(
+                    "Check store_iqms. Likely did not have file path to analyses... so no extra results found."
+                )
+                log.info('No additional data added to metadata.')
         # metadata = {
         #    "acquisition": {  # <-- this should be info on the analysis!
         #        "files": [

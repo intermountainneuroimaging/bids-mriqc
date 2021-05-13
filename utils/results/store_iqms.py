@@ -1,11 +1,13 @@
 import json
 import logging
-import os 
-from glob import glob
+import os.path as op
+from os import listdir
+import pandas as pd
 
 from utils.fly.dev_helpers import determine_dir_structure
 
 log = logging.getLogger(__name__)
+
 
 def store_iqms(hierarchy, output_analysis_id_dir):
     """
@@ -30,11 +32,12 @@ def store_iqms(hierarchy, output_analysis_id_dir):
                 try:
                     analysis_to_parse = json.loads(f.read())
                     metadata["analysis"]["info"][
-                        f"{os.path.basename(json_file)}"
+                        f"{op.basename(json_file)}"
                     ] = _create_nested_metadata(analysis_to_parse)
                 except json.decoder.JSONDecodeError:
-                    log.info(f'{json_file} was empty')
+                    log.info(f"{json_file} was empty")
     return metadata
+
 
 def _find_files(hierarchy, output_analysis_id_dir):
     """
@@ -49,26 +52,20 @@ def _find_files(hierarchy, output_analysis_id_dir):
         there is no data that can be harvested for metadata. May need to check the
         path or see if the analysis was not completed.
     """
-    if hierarchy['run_level'] == 'project':
-        #Functional 5.13.21
-        path_to_jsons = os.path.join(
-            output_analysis_id_dir,
-            'sub*',
-            'ses*',
-            "*/sub*.json"
-        )
-    else:
-        path_to_jsons = os.path.join(output_analysis_id_dir, 'sub*.json')
-    jsons = glob(path_to_jsons, recursive=True)
+    jsons = []
     try:
-        jsons[0]
-        list_of_files='\n  '.join(jsons)
+        for f in listdir(output_analysis_id_dir):
+            if (f.endswith(".json")) and (
+                not any(x in op.basename(f) for x in ["manifest", "config"])
+            ):
+                jsons.extend(f)
+        list_of_files = "\n  ".join(jsons)
         log.info(f"Found:\n  {list_of_files}")
         return jsons
-    except IndexError:
-        log.info('Did not find MRIQC output jsons to harvest.')
-        log.debug(f"Missing info for metadata. Checked here: \n {path_to_jsons}")
+    except FileNotFoundError:
+        log.info("Did not find MRIQC output jsons to harvest.")
         log.debug(determine_dir_structure(output_analysis_id_dir))
+
 
 def _create_nested_metadata(analysis_to_parse):
     """
@@ -84,18 +81,12 @@ def _create_nested_metadata(analysis_to_parse):
     toss_keys = [k for k in analysis_to_parse.keys() if k.startswith("__")]
     toss_keys.extend(["bids_meta", "provenance"])
 
-    add_metadata = {}
+    add_metadata = []
 
     for k, v in analysis_to_parse.items():
         if k not in toss_keys:
-            labels = k.split("_")
-            if len(labels) == 3:
-                add_metadata.setdefault(labels[0], {}).setdefault(labels[1], {})[
-                    labels[2]
-                ] = v
-            elif len(labels) == 2:
-                add_metadata.setdefault(labels[0], {})[labels[1]] = v
-            else:
-                add_metadata[labels[0]] = v
-    log.debug(f'Passing {len(add_metadata)} IQM items to metadata.')
-    return add_metadata
+            add_metadata.append([k, v])
+    log.debug(f"Passing {len(add_metadata)} IQM items to metadata.")
+    add_metadata = pd.DataFrame(add_metadata)
+    add_metadata_json = add_metadata.to_json(orient="records")
+    return add_metadata_json

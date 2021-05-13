@@ -287,29 +287,29 @@ def main(gtk_context):
     finally:
         # save .metadata file
         metadata = {
-            "project": {
-                "info": {hierarchy['project_label']
-                },
-                "tags": [run_label, destination_id],
-            },
-            "subject": {
-                "info": {hierarchy['subject_label']
-                },
-                "tags": [run_label, destination_id],
-            },
-            "session": {
-                "info": {hierarchy['session_label']
-                },
-                "tags": [run_label, destination_id],
-            },
+            # "project": {
+            #     "info": {hierarchy['project_label']
+            #     },
+            #     "tags": [run_label, destination_id],
+            # },
+            # "subject": {
+            #     "info": {hierarchy['subject_label']
+            #     },
+            #     "tags": [run_label, destination_id],
+            # },
+            # "session": {
+            #     "info": {hierarchy['session_label']
+            #     },
+            #     "tags": [run_label, destination_id],
+            # },
         }
-        # if dry_run:
-        #      log.info('Just dry run: no additional data.')
-        # else:
-            #try:
-        metadata.update(store_iqms(hierarchy, output_analysis_id_dir))
-            # except TypeError:
-            #     log.info('No IQMs found to add to metadata.')
+        if dry_run:
+             log.info('Just dry run: no additional data.')
+        else:
+            try:
+                metadata.update(store_iqms(hierarchy, output_analysis_id_dir))
+            except TypeError:
+                log.info('No IQMs found to add to metadata.')
 
         # metadata = {
         #    "acquisition": {  # <-- this should be info on the analysis!
@@ -396,7 +396,7 @@ def main(gtk_context):
             log.info(msg)
             return_code = 1
 
-        if len(metadata["analysis"]["info"]) > 0:
+        if ('analysis' in metadata) and (len(metadata["analysis"]["info"]) > 0):
             with open(f"{gtk_context.output_dir}/.metadata.json", "w") as fff:
                 json.dump(metadata, fff)
             log.info(f"Wrote {gtk_context.output_dir}/.metadata.json")

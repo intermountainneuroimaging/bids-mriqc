@@ -333,10 +333,8 @@ def main(gtk_context):
             try:
                 metadata.update(store_iqms(hierarchy, output_analysis_id_dir))
             except TypeError:
-                log.debug(
-                    "Check store_iqms. Likely did not have file path to analyses... so no extra results found."
-                )
-                log.info('No additional data added to metadata.')
+                log.info('No IQMs found to add to metadata.')
+
         # metadata = {
         #    "acquisition": {  # <-- this should be info on the analysis!
         #        "files": [
@@ -427,6 +425,7 @@ def main(gtk_context):
                 json.dump(metadata, fff)
             log.info(f"Wrote {gtk_context.output_dir}/.metadata.json")
         else:
+            log.debug()
             log.info("No data available to save in .metadata.json.")
         log.debug(".metadata.json: %s", json.dumps(metadata, indent=4))
 

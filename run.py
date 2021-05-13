@@ -288,52 +288,28 @@ def main(gtk_context):
         # save .metadata file
         metadata = {
             "project": {
-                "info": {
-                    "test": "Hello project",
-                    f"{run_label} {destination_id}": "put this here",
+                "info": {hierarchy['project_label']
                 },
                 "tags": [run_label, destination_id],
             },
             "subject": {
-                "info": {
-                    "test": "Hello subject",
-                    f"{run_label} {destination_id}": "put this here",
+                "info": {hierarchy['subject_label']
                 },
                 "tags": [run_label, destination_id],
             },
             "session": {
-                "info": {
-                    "test": "Hello session",
-                    f"{run_label} {destination_id}": "put this here",
+                "info": {hierarchy['session_label']
                 },
-                "tags": [run_label, destination_id],
-            },
-            "analysis": {
-                "info": {
-                    "test": "Hello analysis",
-                    f"{run_label} {destination_id}": "put this here",
-                },
-                "files": [
-                    {
-                        "name": "bids_tree.html",
-                        "info": {
-                            "value1": "foo",
-                            "value2": "bar",
-                            f"{run_label} {destination_id}": "put this here",
-                        },
-                        "tags": ["ein", "zwei"],
-                    }
-                ],
                 "tags": [run_label, destination_id],
             },
         }
-        if dry_run:
-             log.info('Just dry run: no additional data.')
-        else:
-            try:
-                metadata.update(store_iqms(hierarchy, output_analysis_id_dir))
-            except TypeError:
-                log.info('No IQMs found to add to metadata.')
+        # if dry_run:
+        #      log.info('Just dry run: no additional data.')
+        # else:
+            #try:
+        metadata.update(store_iqms(hierarchy, output_analysis_id_dir))
+            # except TypeError:
+            #     log.info('No IQMs found to add to metadata.')
 
         # metadata = {
         #    "acquisition": {  # <-- this should be info on the analysis!
@@ -425,7 +401,6 @@ def main(gtk_context):
                 json.dump(metadata, fff)
             log.info(f"Wrote {gtk_context.output_dir}/.metadata.json")
         else:
-            log.debug()
             log.info("No data available to save in .metadata.json.")
         log.debug(".metadata.json: %s", json.dumps(metadata, indent=4))
 

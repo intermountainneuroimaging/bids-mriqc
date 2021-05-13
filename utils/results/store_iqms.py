@@ -3,6 +3,8 @@ import logging
 import os 
 from glob import glob
 
+from utils.fly.dev_helpers import determine_dir_structure
+
 log = logging.getLogger(__name__)
 
 def store_iqms(hierarchy, output_analysis_id_dir):
@@ -23,14 +25,16 @@ def store_iqms(hierarchy, output_analysis_id_dir):
     metadata.setdefault("analysis", {}).setdefault("info", {})
     jsons = _find_files(hierarchy, output_analysis_id_dir)
     if jsons:
-        log.info(f'Parsing {jsons} for metadata')
         for json_file in jsons:
             with open(json_file) as f:
-                analysis_to_parse = json.load(f)
-                metadata["analysis"]["info"][
-                    f"{os.path.basename(json_file)}"
-                ] = _create_nested_metadata(analysis_to_parse)
-        return metadata
+                try:
+                    analysis_to_parse = json.loads(f.read())
+                    metadata["analysis"]["info"][
+                        f"{os.path.basename(json_file)}"
+                    ] = _create_nested_metadata(analysis_to_parse)
+                except json.decoder.JSONDecodeError:
+                    log.info(f'{json_file} was empty')
+    return metadata
 
 def _find_files(hierarchy, output_analysis_id_dir):
     """
@@ -46,6 +50,7 @@ def _find_files(hierarchy, output_analysis_id_dir):
         path or see if the analysis was not completed.
     """
     if hierarchy['run_level'] == 'project':
+        #Functional 5.13.21
         path_to_jsons = os.path.join(
             output_analysis_id_dir,
             'sub*',
@@ -53,17 +58,17 @@ def _find_files(hierarchy, output_analysis_id_dir):
             "*/sub*.json"
         )
     else:
-        output_dir = os.path.dirname(os.path.normpath(output_analysis_id_dir))
-        path_to_jsons = os.path.join(output_dir, 'sub*.json')
+        path_to_jsons = os.path.join(output_analysis_id_dir, 'sub*.json')
     jsons = glob(path_to_jsons, recursive=True)
     try:
-        # Throw IndexError for no files
         jsons[0]
-        log.info(f'Found {jsons}')
+        list_of_files='\n  '.join(jsons)
+        log.info(f"Found:\n  {list_of_files}")
+        return jsons
     except IndexError:
         log.info('Did not find MRIQC output jsons to harvest.')
-        log.debug(f"Missing info for metadata. Checked here: \n {path_to_jsons}\n"
-                  f"{glob(os.path.join(output_dir,'*'), recursive=True)}")
+        log.debug(f"Missing info for metadata. Checked here: \n {path_to_jsons}")
+        log.debug(determine_dir_structure(output_analysis_id_dir))
 
 def _create_nested_metadata(analysis_to_parse):
     """

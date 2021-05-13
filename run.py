@@ -332,7 +332,7 @@ def main(gtk_context):
         else:
             try:
                 metadata.update(store_iqms(hierarchy, output_analysis_id_dir))
-            except Exception:
+            except TypeError:
                 log.debug(
                     "Check store_iqms. Likely did not have file path to analyses... so no extra results found."
                 )

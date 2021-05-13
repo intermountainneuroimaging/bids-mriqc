@@ -30,7 +30,7 @@ def store_iqms(hierarchy, output_analysis_id_dir):
                 metadata["analysis"]["info"][
                     f"{os.path.basename(json_file)}"
                 ] = _create_nested_metadata(analysis_to_parse)
-    return metadata
+        return metadata
 
 def _find_files(hierarchy, output_analysis_id_dir):
     if hierarchy['run_level'] == 'project':

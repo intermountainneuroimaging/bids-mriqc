@@ -37,5 +37,5 @@ def test_wet_run_fails(
     assert search_stderr_contains(captured, "Empty file",
                                   "sub-TOME3024_ses-Session1_task-REST_dir-AP_run-2_bold.nii.gz")
     assert status == 1
-    assert Path("/flywheel/v0/output/.metadata.json").exists()
+    assert Path("/flywheel/v0/output/.metadata.json").exists() == False
     assert search_stderr_contains(captured, "CRITICAL", "command has failed")

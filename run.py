@@ -307,7 +307,7 @@ def main(gtk_context):
              log.info('Just dry run: no additional data.')
         else:
             try:
-                metadata.update(store_iqms(hierarchy, output_analysis_id_dir))
+                metadata.update(store_iqms(output_analysis_id_dir))
             except TypeError:
                 log.info('No IQMs found to add to metadata.')
 

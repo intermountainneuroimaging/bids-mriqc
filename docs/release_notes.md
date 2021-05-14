@@ -1,0 +1,5 @@
+##1.1.7_0.15.2
+* Add `docs` folder
+* Add `docs/release_note.md`
+* ENH: Added MRIQC's Image Quality Metrics summary stats to the Custom Info tab.
+[GEAR-274] https://flywheelio.atlassian.net/jira/software/projects/GEAR/boards/35?selectedIssue=GEAR-274

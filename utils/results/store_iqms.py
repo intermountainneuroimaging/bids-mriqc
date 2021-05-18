@@ -23,38 +23,41 @@ def store_iqms(output_analysis_id_dir):
 
     metadata = {}
     metadata.setdefault("analysis", {}).setdefault("info", {})
-    jsons = _find_files(output_analysis_id_dir)
-    if jsons:
-        for json_file in jsons:
-            with open(json_file) as f:
+    files = _find_files(output_analysis_id_dir, "json")
+    if files:
+        for analysis in files:
+            with open(analysis) as f:
+                analysis_to_parse = json.loads(f.read())
                 try:
-                    analysis_to_parse = json.loads(f.read())
                     metadata["analysis"]["info"][
-                        f"{op.basename(json_file)}"
+                        f"{op.basename(analysis)}"
                     ] = _create_nested_metadata(analysis_to_parse)
                 except json.decoder.JSONDecodeError:
-                    log.info(f"{json_file} was empty")
+                    log.info(f"{analysis} was empty")
     return metadata
 
 
-def _find_files(output_analysis_id_dir):
+def _find_files(output_analysis_id_dir, ext):
     """
     Locates analysis output. Assumes naming scheme follows BIDS format.
         output_analysis_id_dir (path): path including the destination id for project
         level analyses; avoids internal call to get the destination id of the container.
+    Args:
+        output_analysis_id_dir (filepath): Flywheel env, MRIQC output file path
+        ext (str) : .json or .csv, depending on the analysis level being summarized.
     Raises:
-        IndexError: If no subject-level jsons are available in the path specified,
+        IndexError: If no subject-level files are available in the path specified,
         there is no data that can be harvested for metadata. May need to check the
         path or see if the analysis was not completed.
     """
     try:
-        jsons = glob.glob(op.join(output_analysis_id_dir,'**/*.json'), recursive=True)
-        jsons[0] # Throw exception if empty list
-        list_of_files = "\n  ".join(jsons)
-        log.info(f"Found IQM JSONs:\n  {list_of_files}")
-        return jsons
+        files = glob.glob(op.join(output_analysis_id_dir, "**/*" + ext), recursive=True)
+        files[0]  # Throw exception if empty list
+        list_of_files = "\n  ".join(files)
+        log.info(f"Found IQM files:\n  {list_of_files}")
+        return files
     except IndexError:
-        log.info("Did not find MRIQC output jsons to harvest.")
+        log.info("Did not find MRIQC output files to harvest.")
         log.debug(determine_dir_structure(output_analysis_id_dir))
 
 
@@ -70,7 +73,7 @@ def _create_nested_metadata(analysis_to_parse):
     """
 
     toss_keys = [k for k in analysis_to_parse.keys() if k.startswith("__")]
-    toss_keys.extend(["bids_meta", "provenance"])
+    toss_keys.extend(["bids_meta", "provenance", "bids_name"])
 
     add_metadata = {}
 

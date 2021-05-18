@@ -33,9 +33,6 @@ CONTAINER = f"{REPO}/{GEAR}]"
 # The BIDS App command to run, e.g. "mriqc"
 BIDS_APP = "mriqc"
 
-# What level to run at (positional_argument #3)
-ANALYSIS_LEVEL = "participant"  # "group"
-
 # when downloading BIDS Limit download to specific folders? e.g. ['anat','func','fmap']
 DOWNLOAD_MODALITIES = ["anat", "func"]  # empty list is no limit
 
@@ -113,7 +110,7 @@ def get_and_log_environment(log):
     return environ
 
 
-def generate_command(config, work_dir, output_analysis_id_dir, log, errors, warnings):
+def generate_command(config, work_dir, output_analysis_id_dir, log, errors, warnings, analysis_level='participant'):
     """Build the main command line command to run.
 
     Args:
@@ -134,7 +131,7 @@ def generate_command(config, work_dir, output_analysis_id_dir, log, errors, warn
     # These follow the BIDS Apps definition (https://github.com/BIDS-Apps)
     cmd.append(str(work_dir / "bids"))
     cmd.append(str(output_analysis_id_dir))
-    cmd.append(ANALYSIS_LEVEL)
+    cmd.append(analysis_level)
 
     # get parameters to pass to the command by skipping gear config parameters
     # (which start with "gear-").
@@ -203,6 +200,7 @@ def main(gtk_context):
     # can be returned.
     output_analysis_id_dir = gtk_context.output_dir / destination_id
 
+
     # set # threads and max memory to use
     set_performance_config(config, log)
 
@@ -270,6 +268,24 @@ def main(gtk_context):
                 Path(output_analysis_id_dir).mkdir()
 
             # This is what it is all about
+            exec_command(
+                command,
+                environ=environ,
+                dry_run=dry_run,
+                shell=True,
+                cont_output=True,
+            )
+
+            # Harvest first level jsons into group level analysis
+            if hierarchy['run_level'] == 'project':
+                analysis_level = 'group'
+                command = generate_command(
+                    config, gtk_context.work_dir, output_analysis_id_dir, log, errors, warnings, analysis_level=analysis_level
+                )
+
+            # This is used as part of the name of output files
+            command_name = make_file_name_safe(command[0])
+
             exec_command(
                 command,
                 environ=environ,

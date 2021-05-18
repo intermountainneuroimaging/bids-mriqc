@@ -23,7 +23,7 @@ class TestStoreIQMs:
         caplog.set_level(logging.DEBUG)
         store_iqms( "foo_dir")
         assert len(caplog.records) == 2
-        assert "Did not find MRIQC output jsons" in caplog.records[0].message
+        assert "Did not find MRIQC output" in caplog.records[0].message
         assert mock_nested.call_count == 0
 
     @patch("utils.results.store_iqms._find_files")

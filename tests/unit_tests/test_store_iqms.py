@@ -1,7 +1,6 @@
 import logging
 from unittest import mock
 from unittest.mock import patch
-import json
 
 
 from utils.results.store_iqms import store_iqms, _create_nested_metadata

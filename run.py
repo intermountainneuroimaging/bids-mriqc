@@ -321,7 +321,7 @@ def main(gtk_context):
                         context.output_dir,
                         name_no_tsv + "_" + context.destination["id"] + ".tsv",
                     )
-                    shutil.move(tsv, dest_tsv)
+                    shutil.copy(tsv, dest_tsv)
                 if os.path.exists(os.path.join(context.output_dir, "*tsv")):
                     log.info(
                         f"Group-level tsv files:\n{glob.glob(os.path.join(context.output_dir,'*tsv'))}"

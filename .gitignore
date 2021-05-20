@@ -110,7 +110,6 @@ venv.bak/
 .DS_Store
 
 # other local
-.idea
 config.json
 input
 output

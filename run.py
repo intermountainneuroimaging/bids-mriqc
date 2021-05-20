@@ -10,7 +10,10 @@ from pathlib import Path
 
 import flywheel_gear_toolkit
 import psutil
-from flywheel_gear_toolkit.interfaces.command_line import build_command_list, exec_command
+from flywheel_gear_toolkit.interfaces.command_line import (
+    build_command_list,
+    exec_command,
+)
 from flywheel_gear_toolkit.utils.zip_tools import zip_output
 
 from utils.bids.download_run_level import download_bids_for_runlevel
@@ -20,7 +23,10 @@ from utils.fly.make_file_name_safe import make_file_name_safe
 from utils.fly.dev_helpers import determine_dir_structure
 from utils.results.store_iqms import store_iqms
 from utils.results.zip_htmls import zip_htmls
-from utils.results.zip_intermediate import zip_all_intermediate_output, zip_intermediate_selected
+from utils.results.zip_intermediate import (
+    zip_all_intermediate_output,
+    zip_intermediate_selected,
+)
 
 GEAR = "bids-mriqc"
 REPO = "flywheel-apps"
@@ -314,11 +320,14 @@ def main(gtk_context):
                         name_no_tsv + "_" + context.destination["id"] + ".tsv",
                     )
                     shutil.move(tsv, dest_tsv)
-                if os.path.exists(os.path.join(context.output_dir,'*tsv')):
-                    log.info(f"Group-level tsv files:\n{glob.glob(os.path.join(context.output_dir,'*tsv'))}")
+                if os.path.exists(os.path.join(context.output_dir, "*tsv")):
+                    log.info(
+                        f"Group-level tsv files:\n{glob.glob(os.path.join(context.output_dir,'*tsv'))}"
+                    )
                 else:
-                    log.debug(f"Do you spot tsv files here?\n{determine_dir_structure(context.output_dir)}")
-
+                    log.debug(
+                        f"Do you spot tsv files here?\n{determine_dir_structure(context.output_dir)}"
+                    )
 
     except RuntimeError as exc:
         return_code = 1

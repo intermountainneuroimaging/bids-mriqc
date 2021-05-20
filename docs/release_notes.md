@@ -1,4 +1,4 @@
-##1.1.7_0.15.2
+##1.2.0_0.15.2
 * Add `docs` folder
 * Add `docs/release_note.md`
 * ENH: Added MRIQC's Image Quality Metrics summary stats to the Custom Info tab.

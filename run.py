@@ -291,14 +291,17 @@ def main(gtk_context):
                 )
 
                 command_name = make_file_name_safe(command[0])
-
-                exec_command(
-                    command,
-                    environ=environ,
-                    dry_run=dry_run,
-                    shell=True,
-                    cont_output=True,
-                )
+                try:
+                    exec_command(
+                        command,
+                        environ=environ,
+                        dry_run=dry_run,
+                        shell=True,
+                        cont_output=True,
+                    )
+                except Exception as e:
+                    # Bare, extra exception from mriqc/cli/run.py line 113
+                    print(e)
 
                 # Copy the resulting tsv summaries to the enclosing output directory
                 # where the other, zipped output will live.

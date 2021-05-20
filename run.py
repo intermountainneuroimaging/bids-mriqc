@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Run the gear: set up for and call command-line command."""
 
+import glob
 import json
 import os
 import shutil
@@ -19,6 +20,8 @@ from utils.bids.download_run_level import download_bids_for_runlevel
 from utils.bids.run_level import get_run_level_and_hierarchy
 from utils.dry_run import pretend_it_ran
 from utils.fly.make_file_name_safe import make_file_name_safe
+from utils.fly.dev_helpers import determine_dir_structure
+from utils.results.store_iqms import store_iqms
 from utils.results.zip_htmls import zip_htmls
 from utils.results.zip_intermediate import (
     zip_all_intermediate_output,
@@ -31,9 +34,6 @@ CONTAINER = f"{REPO}/{GEAR}]"
 
 # The BIDS App command to run, e.g. "mriqc"
 BIDS_APP = "mriqc"
-
-# What level to run at (positional_argument #3)
-ANALYSIS_LEVEL = "participant"  # "group"
 
 # when downloading BIDS Limit download to specific folders? e.g. ['anat','func','fmap']
 DOWNLOAD_MODALITIES = ["anat", "func"]  # empty list is no limit
@@ -112,7 +112,15 @@ def get_and_log_environment(log):
     return environ
 
 
-def generate_command(config, work_dir, output_analysis_id_dir, log, errors, warnings):
+def generate_command(
+    config,
+    work_dir,
+    output_analysis_id_dir,
+    log,
+    errors,
+    warnings,
+    analysis_level="participant",
+):
     """Build the main command line command to run.
 
     Args:
@@ -120,6 +128,8 @@ def generate_command(config, work_dir, output_analysis_id_dir, log, errors, warn
         work_dir (path): scratch directory where non-saved files can be put
         output_analysis_id_dir (path): directory where output will be saved
         log (GearToolkitContext().log): logger set up by Gear Toolkit
+        analysis_level (str): toggle between participant- or group-level
+        analysis, with participant being the default
 
     Returns:
         cmd (list of str): command to execute
@@ -133,7 +143,7 @@ def generate_command(config, work_dir, output_analysis_id_dir, log, errors, warn
     # These follow the BIDS Apps definition (https://github.com/BIDS-Apps)
     cmd.append(str(work_dir / "bids"))
     cmd.append(str(output_analysis_id_dir))
-    cmd.append(ANALYSIS_LEVEL)
+    cmd.append(analysis_level)
 
     # get parameters to pass to the command by skipping gear config parameters
     # (which start with "gear-").
@@ -270,8 +280,56 @@ def main(gtk_context):
 
             # This is what it is all about
             exec_command(
-                command, environ=environ, dry_run=dry_run, shell=True, cont_output=True,
+                command,
+                environ=environ,
+                dry_run=dry_run,
+                shell=True,
+                cont_output=True,
             )
+
+            # Harvest first level jsons into group level analysis
+            if hierarchy["run_level"] == "project":
+                command = generate_command(
+                    config,
+                    gtk_context.work_dir,
+                    output_analysis_id_dir,
+                    log,
+                    errors,
+                    warnings,
+                    analysis_level="group",
+                )
+
+                command_name = make_file_name_safe(command[0])
+                try:
+                    exec_command(
+                        command,
+                        environ=environ,
+                        dry_run=dry_run,
+                        shell=True,
+                        cont_output=True,
+                    )
+                except Exception as e:
+                    # Bare, extra exception from mriqc/cli/run.py line 113
+                    print(e)
+
+                # Copy the resulting tsv summaries to the enclosing output directory
+                # where the other, zipped output will live.
+                tsvs = glob.glob(os.path.join(output_analysis_id_dir, "*tsv"))
+                for tsv in tsvs:
+                    name_no_tsv = os.path.splitext(os.path.basename(tsv))[0]
+                    dest_tsv = os.path.join(
+                        context.output_dir,
+                        name_no_tsv + "_" + context.destination["id"] + ".tsv",
+                    )
+                    shutil.copy(tsv, dest_tsv)
+                if os.path.exists(os.path.join(context.output_dir, "*tsv")):
+                    log.info(
+                        f"Group-level tsv files:\n{glob.glob(os.path.join(context.output_dir,'*tsv'))}"
+                    )
+                else:
+                    log.debug(
+                        f"Do you spot tsv files here?\n{determine_dir_structure(context.output_dir)}"
+                    )
 
     except RuntimeError as exc:
         return_code = 1
@@ -280,6 +338,57 @@ def main(gtk_context):
         log.exception("Unable to execute command.")
 
     finally:
+        # save .metadata file
+        metadata = {
+            # "project": {
+            #     "info": {hierarchy['project_label']
+            #     },
+            #     "tags": [run_label, destination_id],
+            # },
+            # "subject": {
+            #     "info": {hierarchy['subject_label']
+            #     },
+            #     "tags": [run_label, destination_id],
+            # },
+            # "session": {
+            #     "info": {hierarchy['session_label']
+            #     },
+            #     "tags": [run_label, destination_id],
+            # },
+        }
+        if dry_run:
+            log.info("Just dry run: no additional data.")
+        else:
+            try:
+                metadata.update(store_iqms(output_analysis_id_dir))
+            except TypeError:
+                log.info("No IQMs found to add to metadata.")
+
+        # metadata = {
+        #    "acquisition": {  # <-- this should be info on the analysis!
+        #        "files": [
+        #            {
+        #                "name": report_filename,
+        #                "type": "qa",
+        #                "modality": "MR",
+        #                "classification": config_classification,
+        #                "info": deriv_info,
+        #            },
+        #            {
+        #                "name": zip_filename,
+        #                "type": "qa",
+        #                "modality": "MR",
+        #                "classification": config_classification,
+        #            },
+        #            {
+        #                "name": deriv_filename,
+        #                "type": "qa",
+        #                "modality": "MR",
+        #                "classification": config_classification,
+        #            },
+        #        ]
+        #    }
+        # }
 
         # Cleanup, move all results to the output directory
 
@@ -340,75 +449,7 @@ def main(gtk_context):
             log.info(msg)
             return_code = 1
 
-        # save .metadata file
-        metadata = {
-            "project": {
-                "info": {
-                    "test": "Hello project",
-                    f"{run_label} {destination_id}": "put this here",
-                },
-                "tags": [run_label, destination_id],
-            },
-            "subject": {
-                "info": {
-                    "test": "Hello subject",
-                    f"{run_label} {destination_id}": "put this here",
-                },
-                "tags": [run_label, destination_id],
-            },
-            "session": {
-                "info": {
-                    "test": "Hello session",
-                    f"{run_label} {destination_id}": "put this here",
-                },
-                "tags": [run_label, destination_id],
-            },
-            "analysis": {
-                "info": {
-                    "test": "Hello analysis",
-                    f"{run_label} {destination_id}": "put this here",
-                },
-                "files": [
-                    {
-                        "name": "bids_tree.html",
-                        "info": {
-                            "value1": "foo",
-                            "value2": "bar",
-                            f"{run_label} {destination_id}": "put this here",
-                        },
-                        "tags": ["ein", "zwei"],
-                    }
-                ],
-                "tags": [run_label, destination_id],
-            },
-        }
-        # metadata = {
-        #    "acquisition": {  # <-- this should be info on the analysis!
-        #        "files": [
-        #            {
-        #                "name": report_filename,
-        #                "type": "qa",
-        #                "modality": "MR",
-        #                "classification": config_classification,
-        #                "info": deriv_info,
-        #            },
-        #            {
-        #                "name": zip_filename,
-        #                "type": "qa",
-        #                "modality": "MR",
-        #                "classification": config_classification,
-        #            },
-        #            {
-        #                "name": deriv_filename,
-        #                "type": "qa",
-        #                "modality": "MR",
-        #                "classification": config_classification,
-        #            },
-        #        ]
-        #    }
-        # }
-
-        if len(metadata["analysis"]["info"]) > 0:
+        if ("analysis" in metadata) and (len(metadata["analysis"]["info"]) > 0):
             with open(f"{gtk_context.output_dir}/.metadata.json", "w") as fff:
                 json.dump(metadata, fff)
             log.info(f"Wrote {gtk_context.output_dir}/.metadata.json")
@@ -422,5 +463,5 @@ def main(gtk_context):
 
 
 if __name__ == "__main__":
-
-    sys.exit(main(flywheel_gear_toolkit.GearToolkitContext()))
+    with flywheel_gear_toolkit.GearToolkitContext() as context:
+        sys.exit(main(context))

@@ -108,3 +108,9 @@ venv.bak/
 
 # mac os Finder
 .DS_Store
+
+# other local
+config.json
+input
+output
+work

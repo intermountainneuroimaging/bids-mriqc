@@ -49,4 +49,4 @@ def test_dry_run_works(
     assert search_stdout_contains(
         captured, "command is: ['mriqc'", "'arg1', 'arg2', '-v'"
     )
-    assert Path("/flywheel/v0/output/.metadata.json").exists()
+    assert Path("/flywheel/v0/output/.metadata.json").exists() == False

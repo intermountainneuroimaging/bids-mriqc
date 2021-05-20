@@ -6,6 +6,8 @@ import os
 import shutil
 import sys
 from pathlib import Path
+import subprocess as sp
+import glob
 
 import flywheel_gear_toolkit
 import psutil
@@ -283,16 +285,24 @@ def main(gtk_context):
                     config, gtk_context.work_dir, output_analysis_id_dir, log, errors, warnings, analysis_level=analysis_level
                 )
 
-            # This is used as part of the name of output files
-            command_name = make_file_name_safe(command[0])
+                # This is used as part of the name of output files
+                command_name = make_file_name_safe(command[0])
 
-            exec_command(
-                command,
-                environ=environ,
-                dry_run=dry_run,
-                shell=True,
-                cont_output=True,
-            )
+                exec_command(
+                    command,
+                    environ=environ,
+                    dry_run=dry_run,
+                    shell=True,
+                    cont_output=True,
+                )
+                tsvs = glob.glob(gtk_context.output_dir,'*tsv')
+                for tsv in tsvs:
+                    name_no_tsv = os.path.splitext(os.path.basename(tsv))[0]
+                    dest_tsv = os.path.join(
+                        context.output_dir, name_no_tsv + "_" + context.destination["id"] + ".tsv"
+                    )
+                    command = ['mv', tsv, dest_tsv]
+                    result = sp.run(command, check=True)
 
     except RuntimeError as exc:
         return_code = 1

@@ -128,6 +128,8 @@ def generate_command(
         work_dir (path): scratch directory where non-saved files can be put
         output_analysis_id_dir (path): directory where output will be saved
         log (GearToolkitContext().log): logger set up by Gear Toolkit
+        analysis_level (str): toggle between participant- or group-level
+        analysis, with participant being the default
 
     Returns:
         cmd (list of str): command to execute

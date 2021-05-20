@@ -1,32 +1,25 @@
 #!/usr/bin/env python3
 """Run the gear: set up for and call command-line command."""
 
+import glob
 import json
 import os
 import shutil
 import sys
 from pathlib import Path
-import subprocess as sp
-import glob
 
 import flywheel_gear_toolkit
 import psutil
-from flywheel_gear_toolkit.interfaces.command_line import (
-    build_command_list,
-    exec_command,
-)
+from flywheel_gear_toolkit.interfaces.command_line import build_command_list, exec_command
 from flywheel_gear_toolkit.utils.zip_tools import zip_output
 
 from utils.bids.download_run_level import download_bids_for_runlevel
 from utils.bids.run_level import get_run_level_and_hierarchy
 from utils.dry_run import pretend_it_ran
 from utils.fly.make_file_name_safe import make_file_name_safe
-from utils.results.zip_htmls import zip_htmls
-from utils.results.zip_intermediate import (
-    zip_all_intermediate_output,
-    zip_intermediate_selected,
-)
 from utils.results.store_iqms import store_iqms
+from utils.results.zip_htmls import zip_htmls
+from utils.results.zip_intermediate import zip_all_intermediate_output, zip_intermediate_selected
 
 GEAR = "bids-mriqc"
 REPO = "flywheel-apps"
@@ -112,7 +105,15 @@ def get_and_log_environment(log):
     return environ
 
 
-def generate_command(config, work_dir, output_analysis_id_dir, log, errors, warnings, analysis_level='participant'):
+def generate_command(
+    config,
+    work_dir,
+    output_analysis_id_dir,
+    log,
+    errors,
+    warnings,
+    analysis_level="participant",
+):
     """Build the main command line command to run.
 
     Args:
@@ -202,7 +203,6 @@ def main(gtk_context):
     # can be returned.
     output_analysis_id_dir = gtk_context.output_dir / destination_id
 
-
     # set # threads and max memory to use
     set_performance_config(config, log)
 
@@ -279,13 +279,17 @@ def main(gtk_context):
             )
 
             # Harvest first level jsons into group level analysis
-            if hierarchy['run_level'] == 'project':
-                analysis_level = 'group'
+            if hierarchy["run_level"] == "project":
                 command = generate_command(
-                    config, gtk_context.work_dir, output_analysis_id_dir, log, errors, warnings, analysis_level=analysis_level
+                    config,
+                    gtk_context.work_dir,
+                    output_analysis_id_dir,
+                    log,
+                    errors,
+                    warnings,
+                    analysis_level="group",
                 )
 
-                # This is used as part of the name of output files
                 command_name = make_file_name_safe(command[0])
 
                 exec_command(
@@ -295,14 +299,17 @@ def main(gtk_context):
                     shell=True,
                     cont_output=True,
                 )
-                tsvs = glob.glob(gtk_context.output_dir,'*tsv')
+
+                # Copy the resulting tsv summaries to the enclosing output directory
+                # where the other, zipped output will live.
+                tsvs = glob.glob(os.path.join(output_analysis_id_dir, "*tsv"))
                 for tsv in tsvs:
                     name_no_tsv = os.path.splitext(os.path.basename(tsv))[0]
                     dest_tsv = os.path.join(
-                        context.output_dir, name_no_tsv + "_" + context.destination["id"] + ".tsv"
+                        context.output_dir,
+                        name_no_tsv + "_" + context.destination["id"] + ".tsv",
                     )
-                    command = ['mv', tsv, dest_tsv]
-                    result = sp.run(command, check=True)
+                    shutil.move(tsv, dest_tsv)
 
     except RuntimeError as exc:
         return_code = 1
@@ -330,12 +337,12 @@ def main(gtk_context):
             # },
         }
         if dry_run:
-             log.info('Just dry run: no additional data.')
+            log.info("Just dry run: no additional data.")
         else:
             try:
                 metadata.update(store_iqms(output_analysis_id_dir))
             except TypeError:
-                log.info('No IQMs found to add to metadata.')
+                log.info("No IQMs found to add to metadata.")
 
         # metadata = {
         #    "acquisition": {  # <-- this should be info on the analysis!
@@ -422,7 +429,7 @@ def main(gtk_context):
             log.info(msg)
             return_code = 1
 
-        if ('analysis' in metadata) and (len(metadata["analysis"]["info"]) > 0):
+        if ("analysis" in metadata) and (len(metadata["analysis"]["info"]) > 0):
             with open(f"{gtk_context.output_dir}/.metadata.json", "w") as fff:
                 json.dump(metadata, fff)
             log.info(f"Wrote {gtk_context.output_dir}/.metadata.json")

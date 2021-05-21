@@ -16,7 +16,7 @@
       "non-commercial-use-only": true,
       "main": {
         "name": "BSD-3-Clause",
-        "url": "https://github.com/poldracklab/mriqc/blob/0.15.1/LICENSE.txt"
+        "url": "https://github.com/poldracklab/mriqc/blob/0.15.2/LICENSE.txt"
       },
       "dependencies": [
         {

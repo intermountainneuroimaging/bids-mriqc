@@ -3,7 +3,7 @@ Gear that runs the [MRIQC](https://mriqc.readthedocs.io/en/stable/about.html) pi
 
 MRIQC calculates [Image Quality Metrics (IQMs)](https://mriqc.readthedocs.io/en/stable/measures.html#module-mriqc.qc) and saves them as JSON files and in HTML reports.
 
-This gear runs poldracklab/mriqc version 0.15.3 (April 6, 2020) and bids-standard/bids-validator version 1.5.7 (September 18, 2020).
+This gear runs poldracklab/mriqc version 0.15.2 (April 6, 2020) and bids-standard/bids-validator version 1.5.7 (September 18, 2020).
 
 This can run at the
 [project](https://docs.flywheel.io/hc/en-us/articles/360017808354-EM-6-1-x-Release-Notes),

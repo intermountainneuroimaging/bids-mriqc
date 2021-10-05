@@ -1,3 +1,6 @@
+##1.2.2_0.15.2
+* Update the URL to GitLab
+
 ##1.2.1_0.15.2
 * Hotfix for SSL cert
 

@@ -259,7 +259,8 @@
     "PATH": "/usr/local/miniconda/bin:/opt/afni:/usr/lib/ants:/usr/lib/fsl/5.0:/usr/lib/afni/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
     "POSSUMDIR": "/usr/share/fsl/5.0",
     "PYTHONNOUSERSITE": "1",
-    "TEMPLATEFLOW_HOME": "/opt/templateflow"
+    "TEMPLATEFLOW_HOME": "/opt/templateflow",
+    "REQUESTS_CA_BUNDLE":"/etc/ssl/certs/ca-certificates.crt"
   },
   "command": "python run.py",
   "author": "Poldrack Lab, Stanford University",

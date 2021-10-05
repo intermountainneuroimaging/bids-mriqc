@@ -1,3 +1,6 @@
+##1.2.1_0.15.2
+* Hotfix for SSL cert
+
 ##1.2.0_0.15.2
 * Add `docs` folder
 * Add `docs/release_note.md`

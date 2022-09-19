@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/opt/conda/bin/python
 """Run the gear: set up for and call command-line command."""
 
 import glob
@@ -84,7 +84,7 @@ def set_performance_config(config, log):
             log.warning("mem_gb > number available, using max %d", psutil_mem_gb)
             config["mem_gb"] = psutil_mem_gb
         else:
-            log.info("mem_gb using %d from config", n_cpus)
+            log.info("mem_gb using %d from config", mem_gb)
     else:  # Default is to use all cpus available
         config["mem_gb"] = psutil_mem_gb
         log.info("using mem_gb = %d (maximum available)", psutil_mem_gb)

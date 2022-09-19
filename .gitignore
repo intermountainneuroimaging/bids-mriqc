@@ -114,3 +114,6 @@ config.json
 input
 output
 work
+
+#pycharm
+*.idea

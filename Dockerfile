@@ -1,11 +1,11 @@
 # Use the latest Python 3 docker image
-FROM poldracklab/mriqc:0.15.2
+FROM nipreps/mriqc:22.0.6
 
 MAINTAINER Flywheel <support@flywheel.io>
 
 # Remove expired LetsEncrypt cert
-			RUN rm /usr/share/ca-certificates/mozilla/DST_Root_CA_X3.crt && \
-		    		update-ca-certificates
+#			RUN rm /usr/share/ca-certificates/mozilla/DST_Root_CA_X3.crt && \
+		    RUN update-ca-certificates
 			ENV REQUESTS_CA_BUNDLE "/etc/ssl/certs/ca-certificates.crt"
 
 RUN apt-get update && apt-get install -y zip && rm -rf /var/lib/apt/lists/*

@@ -239,12 +239,12 @@
     },
     "n_cpus": {
       "description": "Number of CPUs/cores to use. Leave blank or set to 0 to use the maximum available in the system.",
-      "optional": true,
+      "default": 2,
       "type": "integer"
     },
     "mem_gb": {
       "description": "Maximum memory to use (GB). Leave blank or set to 0 to use the maximum available in the system.",
-      "optional": true,
+      "default": 8,
       "type": "integer"
     }
   },

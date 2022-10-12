@@ -3,7 +3,9 @@
 
 import glob
 import json
+import logging
 import os
+import re
 import shutil
 import sys
 from pathlib import Path
@@ -27,6 +29,13 @@ from utils.results.zip_intermediate import (
     zip_all_intermediate_output,
     zip_intermediate_selected,
 )
+from utils.singularity import (
+    check_for_singularity,
+    log_singularity_details,
+    unlink_gear_mounts,
+)
+
+log = logging.getLogger(__name__)
 
 GEAR = "bids-mriqc"
 REPO = "flywheel-apps"
@@ -42,7 +51,7 @@ DOWNLOAD_MODALITIES = ["anat", "func"]  # empty list is no limit
 DOWNLOAD_SOURCE = False
 
 # Constants that do not need to be changed
-ENVIRONMENT_FILE = "/tmp/gear_environ.json"
+ENVIRONMENT_FILE = "/flywheel/v0/gear_environ.json"
 
 
 def set_performance_config(config, log):
@@ -100,16 +109,22 @@ def get_and_log_environment(log):
 
     Returns: (nothing)
     """
-    with open(ENVIRONMENT_FILE, "r") as f:
-        environ = json.load(f)
+    try:
+        with open(ENVIRONMENT_FILE, "r") as f:
+            environ = json.load(f)
 
-        # Add environment to log if debugging
-        kv = ""
-        for k, v in environ.items():
-            kv += k + "=" + v + " "
-        log.debug("Environment: " + kv)
+            # Add environment to log if debugging
+            kv = ""
+            for k, v in environ.items():
+                kv += k + "=" + v + " "
+            log.debug("Environment: " + kv)
 
-    return environ
+        return environ
+    except FileNotFoundError:
+        st = os.stat(os.path.dirname(ENVIRONMENT_FILE))
+        log.debug(
+            f"{ENVIRONMENT_FILE} not found.\nPermissions for dir are {st.st_mode}"
+        )
 
 
 def generate_command(
@@ -147,7 +162,10 @@ def generate_command(
 
     # get parameters to pass to the command by skipping gear config parameters
     # (which start with "gear-").
+    skip_pattern = re.compile("gear-|lsf-|slurm-|singularity-")
+
     command_parameters = {}
+    log_to_file = False
     for key, val in config.items():
 
         # these arguments are passed directly to the command as is
@@ -156,7 +174,7 @@ def generate_command(
             for baa in bids_app_args:
                 cmd.append(baa)
 
-        elif not key.startswith("gear-"):
+        elif not skip_pattern.match(key):
             command_parameters[key] = val
 
     # Validate the command parameter dictionary - make sure everything is
@@ -178,7 +196,15 @@ def generate_command(
     return cmd
 
 
-def main(gtk_context):
+def main(gtk_context, use_singularity):
+    """
+    Complete the MRIQC analysis and create results overview.
+    Args:
+        use_singularity (boolean): Running with Singularity or not
+    Returns:
+        exit code
+    """
+
 
     # Keep a list of errors and warning to print all in one place at end of log
     # Any errors will prevent the command from running and will cause exit(1)
@@ -187,16 +213,15 @@ def main(gtk_context):
 
     # run-time configuration options from the gear's context.json
     config = gtk_context.config
-
     dry_run = config.get("gear-dry-run")
 
-    # Setup basic logging and log the configuration for this job
-    if config["gear-log-level"] == "INFO":
-        gtk_context.init_logging("info")
-    else:
-        gtk_context.init_logging("debug")
-    gtk_context.log_config()
-    log = gtk_context.log
+    # # Setup basic logging and log the configuration for this job
+    # if config["gear-log-level"] == "INFO":
+    #     gtk_context.init_logging("info")
+    # else:
+    #     gtk_context.init_logging("debug")
+    # gtk_context.log_config()
+    # log = gtk_context.log
 
     # Given the destination container, figure out if running at the project,
     # subject, or session level.
@@ -216,6 +241,10 @@ def main(gtk_context):
     set_performance_config(config, log)
 
     environ = get_and_log_environment(log)
+    if "/tmp" in str(gtk_context.output_dir):
+        log.debug(type(environ))
+        log.debug(environ["HOME"])
+        environ["HOME"] = "/tmp/bidsapp"
 
     command = generate_command(
         config, gtk_context.work_dir, output_analysis_id_dir, log, errors, warnings
@@ -394,9 +423,13 @@ def main(gtk_context):
 
         # zip entire output/<analysis_id> folder into
         #  <gear_name>_<project|subject|session label>_<analysis.id>.zip
-        zip_file_name = (
-            gtk_context.manifest["name"] + f"_{run_label}_{destination_id}.zip"
-        )
+        try:
+            zip_file_name = (
+                gtk_context.manifest["name"] + f"_{run_label}_{destination_id}.zip"
+            )
+        except KeyError:
+            zip_file_name = f"_{run_label}_{destination_id}.zip"
+
         zip_output(
             str(gtk_context.output_dir),
             destination_id,
@@ -456,6 +489,11 @@ def main(gtk_context):
         else:
             log.info("No data available to save in .metadata.json.")
         log.debug(".metadata.json: %s", json.dumps(metadata, indent=4))
+    if use_singularity:
+        try:
+            unlink_gear_mounts()
+        except FileNotFoundError:
+            pass # That was the entire point of unlinking
 
     log.info("%s Gear is done.  Returning %s", CONTAINER, return_code)
 
@@ -463,5 +501,21 @@ def main(gtk_context):
 
 
 if __name__ == "__main__":
+    # Decide which env is available
+    use_singularity = check_for_singularity()
+    # To test within a Singularity container, use "(config_path='/flywheel/v0/config.json')" for context.
     with flywheel_gear_toolkit.GearToolkitContext() as context:
-        sys.exit(main(context))
+        # Setup basic logging and log the configuration for this job
+        if context.config["gear-log-level"] == "INFO":
+            context.init_logging("info")
+        else:
+            context.init_logging("debug")
+        context.log_config()
+
+        log.info(f"Using Singularity: {use_singularity}")
+        if use_singularity:
+            log_singularity_details()
+
+        # Run the gear
+        sys.exit(main(context, use_singularity))
+

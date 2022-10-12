@@ -22,13 +22,16 @@ WORKDIR ${FLYWHEEL}
 
 # Save docker environ
 ENV PYTHONUNBUFFERED 1
-RUN python -c 'import os, json; f = open("/tmp/gear_environ.json", "w"); json.dump(dict(os.environ), f)'
 
+# Create Flywheel User
+RUN adduser --disabled-password --gecos "Flywheel User" flywheel
 # Copy executable/manifest to Gear
 COPY manifest.json ${FLYWHEEL}/manifest.json
 COPY utils ${FLYWHEEL}/utils
 COPY run.py ${FLYWHEEL}/run.py
+RUN python -c 'import os, json; f = open("/flywheel/v0/gear_environ.json", "w"); json.dump(dict(os.environ), f)'
 
 # Configure entrypoint
-RUN chmod a+x /flywheel/v0/run.py
+RUN chmod a+x /flywheel/v0/run.py && chown -R flywheel ${FLYWHEEL}
 ENTRYPOINT ["/flywheel/v0/run.py"]
+

@@ -29,11 +29,12 @@ from utils.results.zip_intermediate import (
     zip_all_intermediate_output,
     zip_intermediate_selected,
 )
-from utils.singularity import (
-    check_for_singularity,
-    log_singularity_details,
-    unlink_gear_mounts,
-)
+from utils.singularity import run_in_tmp_dir
+# from utils.singularity import (
+#     check_for_singularity,
+#     log_singularity_details,
+#     unlink_gear_mounts,
+# )
 
 log = logging.getLogger(__name__)
 
@@ -196,20 +197,27 @@ def generate_command(
     return cmd
 
 
-def main(gtk_context, use_singularity):
+def main(gtk_context):
     """
     Complete the MRIQC analysis and create results overview.
     Args:
-        use_singularity (boolean): Running with Singularity or not
+        gtk_context : the gear context
     Returns:
         exit code
     """
 
+    FWV0 = Path.cwd()
+    log.info("Running gear in %s", FWV0)
 
     # Keep a list of errors and warning to print all in one place at end of log
     # Any errors will prevent the command from running and will cause exit(1)
     errors = []
     warnings = []
+
+    output_dir = gtk_context.output_dir
+    log.info("output_dir is %s", output_dir)
+    work_dir = gtk_context.work_dir
+    log.info("work_dir is %s", work_dir)
 
     # run-time configuration options from the gear's context.json
     config = gtk_context.config
@@ -241,10 +249,10 @@ def main(gtk_context, use_singularity):
     set_performance_config(config, log)
 
     environ = get_and_log_environment(log)
-    if "/tmp" in str(gtk_context.output_dir):
+    if gtk_context.config["gear-writable-dir"] in str(gtk_context.output_dir):
         log.debug(type(environ))
         log.debug(environ["HOME"])
-        environ["HOME"] = "/tmp/bidsapp"
+        environ["HOME"] = gtk_context.config["gear-writable-dir"] + "/bidsapp"
 
     command = generate_command(
         config, gtk_context.work_dir, output_analysis_id_dir, log, errors, warnings
@@ -489,11 +497,11 @@ def main(gtk_context, use_singularity):
         else:
             log.info("No data available to save in .metadata.json.")
         log.debug(".metadata.json: %s", json.dumps(metadata, indent=4))
-    if use_singularity:
-        try:
-            unlink_gear_mounts()
-        except FileNotFoundError:
-            pass # That was the entire point of unlinking
+    # if use_singularity:
+    #     try:
+    #         unlink_gear_mounts()
+    #     except FileNotFoundError:
+    #         pass # That was the entire point of unlinking
 
     log.info("%s Gear is done.  Returning %s", CONTAINER, return_code)
 
@@ -501,9 +509,16 @@ def main(gtk_context, use_singularity):
 
 
 if __name__ == "__main__":
-    # Decide which env is available
-    use_singularity = check_for_singularity()
+    # Decide which env is available. This is the old way. Kept here just in case
+    # use_singularity = check_for_singularity()
     # To test within a Singularity container, use "(config_path='/flywheel/v0/config.json')" for context.
+
+    #move the singularity check inside one level where the centext is available to check which directory should be made /tmp
+    with flywheel_gear_toolkit.GearToolkitContext() as context:
+        scratch_dir = run_in_tmp_dir(context.config["gear-writable-dir"])
+
+    # Has to be instantiated twice here, since parent directories might have
+    # changed
     with flywheel_gear_toolkit.GearToolkitContext() as context:
         # Setup basic logging and log the configuration for this job
         if context.config["gear-log-level"] == "INFO":
@@ -512,10 +527,22 @@ if __name__ == "__main__":
             context.init_logging("debug")
         context.log_config()
 
-        log.info(f"Using Singularity: {use_singularity}")
-        if use_singularity:
-            log_singularity_details()
+        # log.info(f"Using Singularity: {use_singularity}")
+        # if use_singularity:
+        #     log_singularity_details()
 
         # Run the gear
-        sys.exit(main(context, use_singularity))
+        # sys.exit(main(context, use_singularity))
+        return_code = main(context)
+    # clean up (might be necessary when running in a shared computing environment)
+    if scratch_dir:
+        log.debug("Removing scratch directory")
+        for thing in scratch_dir.glob("*"):
+            if thing.is_symlink():
+                thing.unlink()  # don't remove anything links point to
+                log.debug("unlinked %s", thing.name)
+        shutil.rmtree(scratch_dir)
+        log.debug("Removed %s", scratch_dir)
+
+    sys.exit(return_code)
 

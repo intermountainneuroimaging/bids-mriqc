@@ -147,6 +147,11 @@
             "default": false,
             "type": "boolean"
         },
+        "gear-writable-dir": {
+            "default": "/pl/active/ics/fw_temp_data",
+            "description": "Gears expect to be able to write temporary files in /flywheel/v0/.  If this location is not writable (such as when running in Singularity), this path will be used instead.  mriQC creates a large number of files so this disk space should be fast and local.",
+            "type": "string"
+        },
         "hmc-afni": {
             "description": "Use ANFI 3dvolreg for head motion correction (HMC) - default",
             "default": false,

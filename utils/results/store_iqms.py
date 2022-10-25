@@ -29,6 +29,8 @@ def store_iqms(output_analysis_id_dir):
             with open(analysis) as f:
                 analysis_to_parse = json.loads(f.read())
                 try:
+                    name_object = op.basename(analysis)
+
                     metadata["analysis"]["info"][
                         f"{op.basename(analysis)}"
                     ] = _create_nested_metadata(analysis_to_parse)

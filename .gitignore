@@ -114,6 +114,7 @@ config.json
 input
 output
 work
+bids-mriqc-*
 
 #pycharm
 *.idea

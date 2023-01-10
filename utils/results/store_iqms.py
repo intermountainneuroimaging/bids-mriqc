@@ -29,8 +29,17 @@ def store_iqms(output_analysis_id_dir):
             with open(analysis) as f:
                 analysis_to_parse = json.loads(f.read())
                 try:
+                    name_object = op.basename(analysis).split("_")
+
+                    # remove subject key-value pair
+                    name_object = [item for item in name_object if "sub-" not in item]
+
+                    #remove session key-value pair
+                    name_object = [item for item in name_object if "ses-" not in item]
+
+                    name_object = "_".join(name_object)
                     metadata["analysis"]["info"][
-                        f"{op.basename(analysis)}"
+                        f"{name_object}"
                     ] = _create_nested_metadata(analysis_to_parse)
                 except json.decoder.JSONDecodeError:
                     log.info(f"{analysis} was empty")
@@ -82,3 +91,6 @@ def _create_nested_metadata(analysis_to_parse):
             add_metadata[k] = v
     log.debug(f"Passing {len(add_metadata)} IQM items to metadata.")
     return add_metadata
+
+
+

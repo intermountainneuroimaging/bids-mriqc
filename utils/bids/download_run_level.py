@@ -56,15 +56,12 @@ def fix_dataset_description(bids_path):
     need_to_write = False
 
     if validator_file.exists():
-
         with open(validator_file) as json_file:
-
             data = json.load(json_file)
 
             log.info("type of Funding is: %s", str(type(data["Funding"])))
 
             if not isinstance(data["Funding"], list):
-
                 log.warning('data["Funding"] is not a list')
                 data["Funding"] = list(data["Funding"])
                 log.info("changed it to: %s", str(type(data["Funding"])))
@@ -154,7 +151,6 @@ def download_bids_for_runlevel(
         err_code = 24  # destination does not exist
 
     else:
-
         if gtk_context.destination["type"] == "analysis":
             pass
 
@@ -176,7 +172,6 @@ def download_bids_for_runlevel(
             )
 
         try:  # download BIDS data for the proper run level
-
             if src_data:
                 log.info("Downloading source data.")
             else:
@@ -197,7 +192,6 @@ def download_bids_for_runlevel(
             bids_dir = Path(gtk_context.work_dir) / "bids"
 
             if run_level == "project":
-
                 log.info(
                     'Downloading BIDS for project "%s"', hierarchy["project_label"]
                 )
@@ -212,7 +206,6 @@ def download_bids_for_runlevel(
                     )
 
             elif run_level == "subject":
-
                 log.info(
                     'Downloading BIDS for subject "%s"', hierarchy["subject_label"]
                 )
@@ -230,7 +223,6 @@ def download_bids_for_runlevel(
                     )
 
             elif run_level == "session":
-
                 log.info(
                     'Downloading BIDS for session "%s"', hierarchy["session_label"]
                 )
@@ -249,7 +241,6 @@ def download_bids_for_runlevel(
                     )
 
             elif run_level == "acquisition":
-
                 if hierarchy["acquisition_label"] == "unknown acquisition":
                     msg = (
                         'Cannot download BIDS for acquisition "'
@@ -307,7 +298,6 @@ def download_bids_for_runlevel(
             err_code = 25  # download_bids_dir() ApiException
 
     if bids_path:  # then validate it
-
         if Path(bids_path).exists():
             log.info("Found BIDS path %s", str(bids_path))
 

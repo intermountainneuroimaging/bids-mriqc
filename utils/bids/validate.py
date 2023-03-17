@@ -176,6 +176,7 @@ def validate_bids(bids_path):
 
     except TypeError as ter:
         log.critical(str(repr(ter)), exc_info=True)
+        log.debug(f"bids_output: {bids_output}")
         err_code = 12
 
     if num_bids_errors < 0:

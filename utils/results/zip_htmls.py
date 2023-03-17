@@ -36,7 +36,6 @@ def zip_htmls(context, path):
     log.info("Creating viewable archives for all html files")
 
     if os.path.exists(path):
-
         log.info("Found path: " + str(path))
 
         os.chdir(path)
@@ -44,7 +43,6 @@ def zip_htmls(context, path):
         html_files = glob.glob("*.html")
 
         if len(html_files) > 0:
-
             # if there is an index.html, do it first and re-name it for safe
             # keeping
             save_name = ""
@@ -71,5 +69,4 @@ def zip_htmls(context, path):
             log.warning("No *.html files at " + str(path))
 
     else:
-
         log.error("Path NOT found: " + str(path))

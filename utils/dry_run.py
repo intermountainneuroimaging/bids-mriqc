@@ -4,6 +4,8 @@ import logging
 import os
 from pathlib import Path
 
+from flywheel_gear_toolkit.interfaces.command_line import exec_command
+
 log = logging.getLogger(__name__)
 
 
@@ -68,3 +70,13 @@ def pretend_it_ran(context):
     with open(ff, "w") as fp:
         fp.write(html)
     log.debug("Creating: " + ff)
+
+    log.info("Creating fake output in " + path)
+    path = "output/" + context.destination["id"] + "/"
+    if os.path.exists(path):
+        log.info("path already exists: " + path)
+    else:
+        os.makedirs(path)
+    os.chdir(path)
+    cmd = ["unzip", "-o", "../../tests/data/gear_tests/dry_run_data.zip"]
+    exec_command(cmd, environ=os.environ, cont_output=True)

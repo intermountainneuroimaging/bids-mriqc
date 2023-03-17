@@ -2,8 +2,7 @@ import logging
 from unittest import mock
 from unittest.mock import patch
 
-
-from utils.results.store_iqms import store_iqms, _create_nested_metadata
+from utils.results.store_iqms import _create_nested_metadata, store_iqms
 
 log = logging.getLogger(__name__)
 
@@ -20,7 +19,7 @@ class TestStoreIQMs:
 
         caplog.clear()
         caplog.set_level(logging.DEBUG)
-        store_iqms( "foo_dir")
+        store_iqms("foo_dir")
         assert len(caplog.records) == 2
         assert "Did not find MRIQC output" in caplog.records[0].message
         assert mock_nested.call_count == 0

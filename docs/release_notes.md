@@ -1,3 +1,6 @@
+##1.2.4_0.15.2
+* CHANGE: IQM metadata stored as a list under info.IQM, rather than under info.<filename>
+
 ##1.2.2_0.15.2
 * Update the URL to GitLab
 

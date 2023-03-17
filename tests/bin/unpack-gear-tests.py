@@ -17,7 +17,6 @@ from zipfile import ZipFile
 
 
 def main():
-
     exit_code = 0
 
     # This can be run from:
@@ -47,7 +46,6 @@ def main():
         tests = [args.test]
 
     for test in tests:
-
         name = test[:-4]
         if args.verbose > 0:
             print(f'"{test}" --> "{name}"')
@@ -63,7 +61,6 @@ def main():
 
 
 if __name__ == "__main__":
-
     parser = argparse.ArgumentParser(
         description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
     )

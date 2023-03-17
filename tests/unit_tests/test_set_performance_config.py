@@ -40,15 +40,13 @@ def search_stdout_contains(captured, find_me, contains_me):
 
 
 def test_set_performance_config_0_is_max(capfd):
-
     with flywheel_gear_toolkit.GearToolkitContext(input_args=[]) as gtk_context:
         gtk_context.init_logging("info")
         gtk_context.log_config()
-        log = gtk_context.log
 
         config = {"n_cpus": 0, "mem_gb": 0}
 
-        set_performance_config(config, log)
+        set_performance_config(config)
 
     print("config = ", json.dumps(config, indent=4))
 
@@ -61,15 +59,13 @@ def test_set_performance_config_0_is_max(capfd):
 
 
 def test_set_performance_config_2much_is_2much(capfd):
-
     with flywheel_gear_toolkit.GearToolkitContext(input_args=[]) as gtk_context:
         gtk_context.init_logging("info")
         gtk_context.log_config()
-        log = gtk_context.log
 
         config = {"n_cpus": 10001, "mem_gb": 10001}
 
-        set_performance_config(config, log)
+        set_performance_config(config)
 
     print("config = ", json.dumps(config, indent=4))
 
@@ -82,15 +78,13 @@ def test_set_performance_config_2much_is_2much(capfd):
 
 
 def test_set_performance_config_default_is_max(capfd):
-
     with flywheel_gear_toolkit.GearToolkitContext(input_args=[]) as gtk_context:
         gtk_context.init_logging("info")
         gtk_context.log_config()
-        log = gtk_context.log
 
         config = {}
 
-        set_performance_config(config, log)
+        set_performance_config(config)
 
     print("config = ", json.dumps(config, indent=4))
 
@@ -103,15 +97,13 @@ def test_set_performance_config_default_is_max(capfd):
 
 
 def test_set_performance_config_1_is_1(capfd):
-
     with flywheel_gear_toolkit.GearToolkitContext(input_args=[]) as gtk_context:
         gtk_context.init_logging("info")
         gtk_context.log_config()
-        log = gtk_context.log
 
         config = {"n_cpus": 1, "mem_gb": 1}
 
-        set_performance_config(config, log)
+        set_performance_config(config)
 
     print("config = ", json.dumps(config, indent=4))
 

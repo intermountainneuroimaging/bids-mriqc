@@ -10,7 +10,7 @@ MAINTAINER Flywheel <support@flywheel.io>
 
 RUN apt-get update && apt-get install -y zip && rm -rf /var/lib/apt/lists/*
 
-RUN npm install -g bids-validator@1.5.7
+RUN npm install -g bids-validator@1.9.9
 
 COPY requirements.txt /tmp
 RUN pip install -r /tmp/requirements.txt && \

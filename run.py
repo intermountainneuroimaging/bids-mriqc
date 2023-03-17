@@ -21,8 +21,8 @@ from flywheel_gear_toolkit.utils.zip_tools import zip_output
 from utils.bids.download_run_level import download_bids_for_runlevel
 from utils.bids.run_level import get_run_level_and_hierarchy
 from utils.dry_run import pretend_it_ran
-from utils.fly.make_file_name_safe import make_file_name_safe
 from utils.fly.dev_helpers import determine_dir_structure
+from utils.fly.make_file_name_safe import make_file_name_safe
 from utils.results.store_iqms import store_iqms
 from utils.results.zip_htmls import zip_htmls
 from utils.results.zip_intermediate import (
@@ -37,6 +37,8 @@ from utils.singularity import run_in_tmp_dir
 # )
 
 log = logging.getLogger(__name__)
+
+testing = False
 
 GEAR = "bids-mriqc"
 REPO = "flywheel-apps"
@@ -55,7 +57,7 @@ DOWNLOAD_SOURCE = False
 ENVIRONMENT_FILE = "/flywheel/v0/gear_environ.json"
 
 
-def set_performance_config(config, log):
+def set_performance_config(config):
     """Set run-time performance config params to pass to BIDS App.
 
     Set --n_cpus (number of threads) and --mem_gb (maximum memory to use).
@@ -66,7 +68,6 @@ def set_performance_config(config, log):
 
     Args:
         config (GearToolkitContext.config): run-time options from config.json
-        log (GearToolkitContext().log): logger set up by Gear Toolkit
 
     Results:
         sets config["n_cpus"] which will become part of the command line command
@@ -86,7 +87,7 @@ def set_performance_config(config, log):
         config["n_cpus"] = os_cpu_count  # zoom zoom
         log.info("using n_cpus = %d (maximum available)", os_cpu_count)
 
-    psutil_mem_gb = int(psutil.virtual_memory().available / (1024 ** 3))
+    psutil_mem_gb = int(psutil.virtual_memory().available / (1024**3))
     log.info("psutil.virtual_memory().available= {:5.2f} GiB".format(psutil_mem_gb))
     mem_gb = config.get("mem_gb")
     if mem_gb:
@@ -100,15 +101,10 @@ def set_performance_config(config, log):
         log.info("using mem_gb = %d (maximum available)", psutil_mem_gb)
 
 
-def get_and_log_environment(log):
+def get_and_log_environment():
     """Grab and log environment for to use when executing command line.
 
     The shell environment is saved into a file at an appropriate place in the Dockerfile.
-
-    Args:
-        log (GearToolkitContext().log): logger set up by Gear Toolkit
-
-    Returns: (nothing)
     """
     try:
         with open(ENVIRONMENT_FILE, "r") as f:
@@ -132,7 +128,6 @@ def generate_command(
     config,
     work_dir,
     output_analysis_id_dir,
-    log,
     errors,
     warnings,
     analysis_level="participant",
@@ -143,7 +138,6 @@ def generate_command(
         config (GearToolkitContext.config): run-time options from config.json
         work_dir (path): scratch directory where non-saved files can be put
         output_analysis_id_dir (path): directory where output will be saved
-        log (GearToolkitContext().log): logger set up by Gear Toolkit
         analysis_level (str): toggle between participant- or group-level
         analysis, with participant being the default
 
@@ -168,7 +162,6 @@ def generate_command(
     command_parameters = {}
     log_to_file = False
     for key, val in config.items():
-
         # these arguments are passed directly to the command as is
         if key == "bids_app_args":
             bids_app_args = val.split(" ")
@@ -223,14 +216,6 @@ def main(gtk_context):
     config = gtk_context.config
     dry_run = config.get("gear-dry-run")
 
-    # # Setup basic logging and log the configuration for this job
-    # if config["gear-log-level"] == "INFO":
-    #     gtk_context.init_logging("info")
-    # else:
-    #     gtk_context.init_logging("debug")
-    # gtk_context.log_config()
-    # log = gtk_context.log
-
     # Given the destination container, figure out if running at the project,
     # subject, or session level.
     destination_id = gtk_context.destination["id"]
@@ -246,16 +231,16 @@ def main(gtk_context):
     output_analysis_id_dir = gtk_context.output_dir / destination_id
 
     # set # threads and max memory to use
-    set_performance_config(config, log)
+    set_performance_config(config)
 
-    environ = get_and_log_environment(log)
+    environ = get_and_log_environment()
     if gtk_context.config["gear-writable-dir"] in str(gtk_context.output_dir):
         log.debug(type(environ))
         log.debug(environ["HOME"])
         environ["HOME"] = gtk_context.config["gear-writable-dir"] + "/bidsapp"
 
     command = generate_command(
-        config, gtk_context.work_dir, output_analysis_id_dir, log, errors, warnings
+        config, gtk_context.work_dir, output_analysis_id_dir, errors, warnings
     )
 
     # This is used as part of the name of output files
@@ -263,7 +248,6 @@ def main(gtk_context):
 
     # Download BIDS Formatted data
     if len(errors) == 0:
-
         # Create HTML file that shows BIDS "Tree" like output
         tree = True
         tree_title = f"{command_name} BIDS Tree"
@@ -293,7 +277,6 @@ def main(gtk_context):
         log.info("Command was NOT run because of previous errors.")
 
     try:
-
         if dry_run:
             ok_to_run = False
             return_code = 0
@@ -301,7 +284,7 @@ def main(gtk_context):
             log.warning(e)
             warnings.append(e)
             pretend_it_ran(gtk_context)
-            metadata = {
+            metadata_to_upload = {
                 "analysis": {
                     "info": {
                         "dry_run": {"How dry I am": "Say to Mister Temperance...."}
@@ -330,7 +313,6 @@ def main(gtk_context):
                     config,
                     gtk_context.work_dir,
                     output_analysis_id_dir,
-                    log,
                     errors,
                     warnings,
                     analysis_level="group",
@@ -375,57 +357,16 @@ def main(gtk_context):
         log.exception("Unable to execute command.")
 
     finally:
-        # save .metadata file
-        metadata = {
-            # "project": {
-            #     "info": {hierarchy['project_label']
-            #     },
-            #     "tags": [run_label, destination_id],
-            # },
-            # "subject": {
-            #     "info": {hierarchy['subject_label']
-            #     },
-            #     "tags": [run_label, destination_id],
-            # },
-            # "session": {
-            #     "info": {hierarchy['session_label']
-            #     },
-            #     "tags": [run_label, destination_id],
-            # },
-        }
-        if dry_run:
+        if dry_run and not testing:
             log.info("Just dry run: no additional data.")
         else:
             try:
-                metadata.update(store_iqms(output_analysis_id_dir))
-            except TypeError:
+                metadata_to_upload = store_iqms(output_analysis_id_dir, gtk_context)
+            except TypeError as e:
+                exc_type, exc_obj, exc_tb = sys.exc_info()
+                mod_name = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
+                log.error(exc_type, mod_name, exc_tb.tb_lineno)
                 log.info("No IQMs found to add to metadata.")
-
-        # metadata = {
-        #    "acquisition": {  # <-- this should be info on the analysis!
-        #        "files": [
-        #            {
-        #                "name": report_filename,
-        #                "type": "qa",
-        #                "modality": "MR",
-        #                "classification": config_classification,
-        #                "info": deriv_info,
-        #            },
-        #            {
-        #                "name": zip_filename,
-        #                "type": "qa",
-        #                "modality": "MR",
-        #                "classification": config_classification,
-        #            },
-        #            {
-        #                "name": deriv_filename,
-        #                "type": "qa",
-        #                "modality": "MR",
-        #                "classification": config_classification,
-        #            },
-        #        ]
-        #    }
-        # }
 
         # Cleanup, move all results to the output directory
 
@@ -459,7 +400,6 @@ def main(gtk_context):
         # clean up: remove output that was zipped
         if Path(output_analysis_id_dir).exists():
             if not config.get("gear-keep-output"):
-
                 log.debug('removing output directory "%s"', str(output_analysis_id_dir))
                 shutil.rmtree(output_analysis_id_dir)
 
@@ -490,18 +430,23 @@ def main(gtk_context):
             log.info(msg)
             return_code = 1
 
-        if ("analysis" in metadata) and (len(metadata["analysis"]["info"]) > 0):
-            with open(f"{gtk_context.output_dir}/.metadata.json", "w") as fff:
-                json.dump(metadata, fff)
-            log.info(f"Wrote {gtk_context.output_dir}/.metadata.json")
-        else:
-            log.info("No data available to save in .metadata.json.")
-        log.debug(".metadata.json: %s", json.dumps(metadata, indent=4))
-    # if use_singularity:
-    #     try:
-    #         unlink_gear_mounts()
-    #     except FileNotFoundError:
-    #         pass # That was the entire point of unlinking
+        # Though metadata is directly updated on the file for most files,
+        # keep for one off files with metadata that should be uploaded.
+        if metadata_to_upload in locals():
+            if ("analysis" in metadata_to_upload) and (
+                len(metadata_to_upload["analysis"]["info"]) > 0
+            ):
+                with open(f"{gtk_context.output_dir}/.metadata.json", "w") as fff:
+                    json.dump(metadata_to_upload, fff)
+                log.info(f"Wrote {gtk_context.output_dir}/.metadata.json")
+            else:
+                log.info("No data available to save in .metadata.json.")
+            log.debug(".metadata.json: %s", json.dumps(metadata_to_upload, indent=4))
+        # if use_singularity:
+        #     try:
+        #         unlink_gear_mounts()
+        #     except FileNotFoundError:
+        #         pass # That was the entire point of unlinking
 
     log.info("%s Gear is done.  Returning %s", CONTAINER, return_code)
 
@@ -521,10 +466,7 @@ if __name__ == "__main__":
     # changed
     with flywheel_gear_toolkit.GearToolkitContext() as context:
         # Setup basic logging and log the configuration for this job
-        if context.config["gear-log-level"] == "INFO":
-            context.init_logging("info")
-        else:
-            context.init_logging("debug")
+        context.init_logging(context.config["gear-log-level"].lower())
         context.log_config()
 
         # log.info(f"Using Singularity: {use_singularity}")
@@ -545,4 +487,3 @@ if __name__ == "__main__":
         log.debug("Removed %s", scratch_dir)
 
     sys.exit(return_code)
-

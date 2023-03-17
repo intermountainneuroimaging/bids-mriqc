@@ -39,7 +39,6 @@ def tree_bids(directory, base_name, title=None, extra=None):
         title = ""
 
     with open(base_name + ".html", "w") as html_file:
-
         html1 = (
             '<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 '
             'Transitional//EN">\n'
@@ -72,7 +71,6 @@ def tree_bids(directory, base_name, title=None, extra=None):
         num_files = 0
 
         for path in sorted(directory.rglob("*")):
-
             depth = len(path.relative_to(directory).parts)
             spacer = "    " * depth
 

@@ -3,7 +3,7 @@ Gear that runs the [MRIQC](https://mriqc.readthedocs.io/en/stable/about.html) pi
 
 MRIQC calculates [Image Quality Metrics (IQMs)](https://mriqc.readthedocs.io/en/stable/measures.html#module-mriqc.qc) and saves them as JSON files and in HTML reports.
 
-This gear runs poldracklab/mriqc version 0.15.3 (April 6, 2020) and bids-standard/bids-validator version 1.5.7 (September 18, 2020).
+This gear runs poldracklab/mriqc version 0.15.2 (April 6, 2020) and bids-standard/bids-validator version 1.5.7 (September 18, 2020).
 
 This can run at the
 [project](https://docs.flywheel.io/hc/en-us/articles/360017808354-EM-6-1-x-Release-Notes),
@@ -15,8 +15,10 @@ the BIDS formatted data directly at the given run level.
 
 For configuration options, please see [MRIQC command line interface](https://mriqc.readthedocs.io/en/stable/running.html#command-line-interface).  Note that arguments such as --n_procs --mem_gb and --ants-nthreads are set to use the maximum available as detected by MRIQC.
 
+IQMs will be reported under the file.info.IQM field.
+
 This will create a zip archive for each individual html file to allow quick
-on-platform viewing: a click on the .html.zip file opens it an a new
+on-platform viewing: a click on the .html.zip file opens it in a new
 browser tab.  Note that links in the html files will not work and
 clicking on .html files directly will not display them properly.
 

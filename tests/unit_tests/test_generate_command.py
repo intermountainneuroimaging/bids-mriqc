@@ -10,7 +10,6 @@ from run import generate_command
 def test_generate_command_missing_config_works(
     capfd, print_captured, search_stdout_contains
 ):
-
     with flywheel_gear_toolkit.GearToolkitContext(input_args=[]) as gtk_context:
         gtk_context.init_logging("info")
         gtk_context.log_config()
@@ -38,7 +37,7 @@ def test_generate_command_missing_config_works(
         errors = []
         warnings = []
 
-        generate_command(config, Path("work"), Path("out/###"), log, errors, warnings)
+        generate_command(config, Path("work"), Path("out/###"), errors, warnings)
 
     captured = capfd.readouterr()
 

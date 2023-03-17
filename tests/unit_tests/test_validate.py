@@ -23,7 +23,6 @@ def json_file():
 
 
 def test_validate_bids_basic_results_works(caplog, tmp_path, json_file):
-
     caplog.set_level(logging.DEBUG)
 
     bids_path = Path("work/bids")
@@ -48,7 +47,6 @@ def test_validate_bids_basic_results_works(caplog, tmp_path, json_file):
             with patch(
                 "utils.bids.validate.json.load", MagicMock(side_effect=[bids_output])
             ):
-
                 mock_run.return_value = ret
 
                 err_code = validate_bids(bids_path)
@@ -59,7 +57,6 @@ def test_validate_bids_basic_results_works(caplog, tmp_path, json_file):
 
 
 def test_validate_bids_no_bids_output(caplog, tmp_path, json_file):
-
     caplog.set_level(logging.DEBUG)
 
     bids_path = Path("work/bids")
@@ -76,7 +73,6 @@ def test_validate_bids_no_bids_output(caplog, tmp_path, json_file):
     with patch("utils.bids.validate.sp.run") as mock_run:
         with patch("__main__.open", MagicMock()):
             with patch("utils.bids.validate.json.load", MagicMock(side_effect=[""])):
-
                 mock_run.return_value = ret
 
                 err_code = validate_bids(bids_path)
@@ -103,7 +99,6 @@ def test_validate_bids_non_zero_exit_reported(caplog, tmp_path, json_file):
     chdir(str(tmp_path))
 
     with patch("utils.bids.validate.sp.run") as mock_run:
-
         mock_run.return_value = ret
 
         err_code = validate_bids(bids_path)
@@ -114,7 +109,6 @@ def test_validate_bids_non_zero_exit_reported(caplog, tmp_path, json_file):
 
 
 def test_validate_bids_error_results_exception(caplog, tmp_path, json_file):
-
     caplog.set_level(logging.DEBUG)
 
     bids_path = Path("work/bids")
@@ -139,7 +133,6 @@ def test_validate_bids_error_results_exception(caplog, tmp_path, json_file):
             with patch(
                 "utils.bids.validate.json.load", MagicMock(side_effect=[bids_output])
             ):
-
                 mock_run.return_value = ret
 
                 err_code = validate_bids(bids_path)

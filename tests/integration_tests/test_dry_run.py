@@ -24,7 +24,6 @@ def test_dry_run_works(
     search_sysout,
     search_syserr,
 ):
-
     user_json = Path("/home/bidsapp/.config/flywheel/user.json")
     if not user_json.exists():
         TestCase.skipTest("", f"No API key available in {str(user_json)}")
@@ -32,7 +31,6 @@ def test_dry_run_works(
     install_gear("dry_run.zip")
 
     with flywheel_gear_toolkit.GearToolkitContext(input_args=[]) as gtk_context:
-
         status = run.main(gtk_context)
 
     captured = capfd.readouterr()

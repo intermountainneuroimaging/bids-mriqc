@@ -30,7 +30,6 @@ def zip_intermediate_selected(context, run_label):
             do_find = True
 
     if do_find:
-
         # Name of zip file has <subject> and <analysis>
         analysis_id = context.destination["id"]
         gear_name = context.manifest["name"]
@@ -44,7 +43,6 @@ def zip_intermediate_selected(context, run_label):
         files_found = []
         folders_found = []
         for subdir, walk_dirs, walk_files in os.walk("."):
-
             for ff in walk_files:
                 if ff in files:
                     path = os.path.join(subdir, ff)

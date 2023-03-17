@@ -1,6 +1,8 @@
-from os import walk, path
 import json
 import logging
+from os import path, walk
+
+from flywheel_gear_toolkit import GearToolkitContext
 
 log = logging.getLogger(__name__)
 

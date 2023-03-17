@@ -22,7 +22,6 @@ from zipfile import ZIP_DEFLATED, ZipFile
 
 
 def main():
-
     exit_code = 0
 
     # This can be run from:
@@ -54,12 +53,10 @@ def main():
         tests = [args.test]
 
     for test in tests:
-
         if test[-1] == "/":
             test = test[:-1]
 
         if Path(test).is_dir():
-
             name = test + ".zip"
             if args.verbose > 0:
                 print(f'"{test}" --> "{name}"')
@@ -90,7 +87,6 @@ def main():
 
 
 if __name__ == "__main__":
-
     parser = argparse.ArgumentParser(
         description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
     )

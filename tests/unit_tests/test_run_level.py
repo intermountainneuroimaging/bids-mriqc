@@ -216,14 +216,12 @@ def test_run_level_unknown_project_says_so(caplog):
 
 
 def test_run_level_exception_handled(caplog):
-
     caplog.set_level(logging.DEBUG)
 
     with patch(
         "flywheel.Client.get",
         MagicMock(side_effect=flywheel.ApiException("foo", "fum")),
     ):
-
         fw = flywheel.Client
 
         hierarchy = get_run_level_and_hierarchy(fw, "01234")

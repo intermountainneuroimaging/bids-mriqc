@@ -17,10 +17,7 @@ import run
 
 
 def test_wet_run_fails(
-    capfd,
-    install_gear,
-    print_captured,
-    search_stderr_contains,
+    capfd, install_gear, print_captured, search_stderr_contains,
 ):
     user_json = Path("/home/bidsapp/.config/flywheel/user.json")
     if not user_json.exists():

@@ -30,6 +30,7 @@ from utils.results.zip_intermediate import (
     zip_intermediate_selected,
 )
 from utils.singularity import run_in_tmp_dir
+
 # from utils.singularity import (
 #     check_for_singularity,
 #     log_singularity_details,
@@ -87,7 +88,7 @@ def set_performance_config(config):
         config["n_cpus"] = os_cpu_count  # zoom zoom
         log.info("using n_cpus = %d (maximum available)", os_cpu_count)
 
-    psutil_mem_gb = int(psutil.virtual_memory().available / (1024**3))
+    psutil_mem_gb = int(psutil.virtual_memory().available / (1024 ** 3))
     log.info("psutil.virtual_memory().available= {:5.2f} GiB".format(psutil_mem_gb))
     mem_gb = config.get("mem_gb")
     if mem_gb:
@@ -300,11 +301,7 @@ def main(gtk_context):
 
             # This is what it is all about
             exec_command(
-                command,
-                environ=environ,
-                dry_run=dry_run,
-                shell=True,
-                cont_output=True,
+                command, environ=environ, dry_run=dry_run, shell=True, cont_output=True,
             )
 
             # Harvest first level jsons into group level analysis
@@ -458,7 +455,7 @@ if __name__ == "__main__":
     # use_singularity = check_for_singularity()
     # To test within a Singularity container, use "(config_path='/flywheel/v0/config.json')" for context.
 
-    #move the singularity check inside one level where the centext is available to check which directory should be made /tmp
+    # move the singularity check inside one level where the centext is available to check which directory should be made /tmp
     with flywheel_gear_toolkit.GearToolkitContext() as context:
         scratch_dir = run_in_tmp_dir(context.config["gear-writable-dir"])
 

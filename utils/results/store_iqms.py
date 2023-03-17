@@ -70,22 +70,7 @@ def store_iqms(output_analysis_id_dir, context):
             log.debug(f"Parsing {analysis}")
             with open(analysis) as f:
                 try:
-<<<<<<< HEAD
-                    name_object = op.basename(analysis).split("_")
-
-                    # remove subject key-value pair
-                    name_object = [item for item in name_object if "sub-" not in item]
-
-                    #remove session key-value pair
-                    name_object = [item for item in name_object if "ses-" not in item]
-
-                    name_object = "_".join(name_object)
-                    metadata["analysis"]["info"][
-                        f"{name_object}"
-                    ] = _create_nested_metadata(analysis_to_parse)
-=======
                     data_to_parse = json.loads(f.read())
->>>>>>> fw/main
                 except json.decoder.JSONDecodeError:
                     log.info(f"{analysis} was empty")
                     continue
@@ -161,6 +146,3 @@ def _create_nested_metadata(data_to_parse):
     # Should be roughly 68 metrics. See https://mriqc.readthedocs.io/en/latest/measures.html
     log.debug(f"Passing {len(add_metadata)} IQM items to metadata.")
     return add_metadata
-
-
-

@@ -42,8 +42,11 @@ def find_fw_file(bids_name, acqs: list):
         log.debug(f"bids_name: {bids_name}")
         log.debug(f"Acquisition {acq.label}")
         for f in acq.files:
+            # skip files that do not contain a bids object
+            if not f.info.get("BIDS"):
+                continue
             log.debug(f"Filename: {f.name}")
-            if bids_name in f.info.get("BIDS").get("Filename") and "nii" in f.name:
+            if "nii" in f.name and bids_name in f.info.get("BIDS").get("Filename"):
                 return f
 
 

@@ -23,7 +23,7 @@ def find_bids_acqs(context):
     # TODO figure out how to get the right type that iter_find can operate on, not obj
     for acq in session.acquisitions.iter_find():
         for f in acq.files:
-            if f.info.get("BIDS"):
+            if f.info.get("BIDS") and "nii" in f.name:
                 bids_acqs.append(acq)
     return bids_acqs
 
@@ -39,9 +39,12 @@ def find_fw_file(bids_name, acqs: list):
 
     """
     for acq in acqs:
+        log.debug(f"bids_name: {bids_name}")
+        log.debug(f"Acquisition {acq.label}")
         for f in acq.files:
+            log.debug(f"Filename: {f.name}")
             if bids_name in f.info.get("BIDS").get("Filename") and "nii" in f.name:
-                return acq, f
+                return f
 
 
 def store_iqms(output_analysis_id_dir, context):
@@ -76,7 +79,8 @@ def store_iqms(output_analysis_id_dir, context):
                     continue
             # Find parent and file in Flywheel based on bids name
             #   How to find will depend on destination parent, project, subject or session.
-            parent, fw_file = find_fw_file(
+            log.debug(f"Basename: {op.splitext(op.basename(analysis))[0]}")
+            fw_file = find_fw_file(
                 op.splitext(op.basename(analysis))[0], bids_acqs
             )
             if fw_file:
@@ -114,6 +118,7 @@ def _find_output_files(output_analysis_id_dir, ext):
             f
             for f in Path(output_analysis_id_dir).rglob("**/*" + ext)
             if not op.basename(f).startswith("._")
+            if "dataset_description.json" not in op.basename(f)
         ]
         files[0]  # Throw exception if empty list
         list_of_files = "\n  ".join([str(f) for f in files])

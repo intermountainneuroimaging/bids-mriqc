@@ -1,0 +1,37 @@
+{
+  "author": "Flywheel",
+  "cite": "",
+  "command": "python run.py",
+  "config": {
+    "debug": {
+      "default": false,
+      "description": "Log debug messages",
+      "type": "boolean"
+    }
+  },
+  "custom": {
+    "flywheel": {
+      "suite": "FW-Templates",
+      "show-job": true
+    },
+    "gear-builder": {
+      "category": "converter",
+      "image": "flywheel/skeleton:0.3.0"
+    }
+  },
+  "description": "{{ }}",
+  "environment": {},
+  "inputs": {
+    "{{text-input}}": {
+      "base": "file",
+      "description": "{{A text file.}}"
+    }
+  },
+  "label": "FW skeleton gear",
+  "license": "Other",
+  "maintainer": "Flywheel <support@flywheel.io>",
+  "name": "skeleton",
+  "source": "https://gitlab.com/flywheel-io/flywheel-apps/templates/skeleton",
+  "url": "https://gitlab.com/flywheel-io/flywheel-apps/templates/skeleton",
+  "version": "0.3.0"
+}

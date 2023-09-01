@@ -34,7 +34,7 @@ Dependencies are listed in the `pyproject.toml` file.
 * Removing: Use `poetry remove [--dev] <dep>`
 * Updating: Use `poetry update <dep>` or `poetry update` to update all deps.
   * Can also not update development dependencies with `--no-dev`
-  * Update dry run: `--dry-run`
+  * Update dry run: `--gear-dry-run`
 
 #### Using a different version of python
 

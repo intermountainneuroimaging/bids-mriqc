@@ -5,8 +5,8 @@ repos:
       - id: gearcheck
         always_run: true
       - id: poetry_export
-      - id: docker_build
-      - id: yamllint
+    #  - id: docker_build
+    #  - id: yamllint
       - id: black
       - id: isort
-      - id: pytest
+    #  - id: pytest

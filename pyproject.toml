@@ -1,6 +1,6 @@
 [tool.poetry]
-name = "fw-gear-skeleton"
-version = "0.3.0"
+name = "fw-gear-bids-app-template"
+version = "0.1.0"
 description = "{{description}}"
 authors = ["Flywheel <support@flywheel.io>"]
 readme = "README.md"
@@ -9,15 +9,15 @@ keywords = [
     "Flywheel",
     "Gears"
 ]
-repository = "https://gitlab.com/flywheel-io/flywheel-apps/templates/skeleton"
+repository = "https://gitlab.com/flywheel-io/flywheel-apps/templates/bids-app-template"
 classifiers = [
     "Topic :: Scientific/Engineering"
 ]
 
 [tool.poetry.dependencies]
 python = "^3.8"
-flywheel-gear-toolkit = "^0.6"
-flywheel-sdk = "^16.8.0"
+flywheel-gear-toolkit = {version="^0.6"}
+flywheel-bids = {git = "https://gitlab.com/flywheel-io/public/bids-client.git", branch = "dev-GEAR-3018-add-bidsApp"}
 
 [tool.poetry.dev-dependencies]
 pytest = "^6.1.2"
@@ -26,5 +26,5 @@ pytest-mock = "^3.8.2"
 
 
 [build-system]
-requires = ["poetry>=0.12"]
+requires = ["poetry>=1.1.12"]
 build-backend = "poetry.core.masonry.api"

@@ -3,35 +3,99 @@
   "cite": "",
   "command": "python run.py",
   "config": {
+    "bids_app_command": {
+      "default": "",
+      "description": "The command as supplied to the BIDS app e.g., qsiprep bids_dir output_dir participant [arg1 [arg2 ...]]",
+      "type": "string"
+    },
     "debug": {
       "default": false,
       "description": "Log debug messages",
       "type": "boolean"
+    },
+    "gear-dry-run": {
+      "default": false,
+      "description": "Do everything except actually execute BIDS App command",
+      "type": "boolean"
+    },
+    "gear-intermediate-files": {
+      "default": "",
+      "description": "Space separated list of FILES to retain from the intermediate work directory.",
+      "type": "string"
+    },
+    "gear-intermediate-folders": {
+      "default": "",
+      "description": "Space separated list of FOLDERS to retain from the intermediate work directory.",
+      "type": "string"
+    },
+    "gear-keep-output": {
+      "default": false,
+      "description": "Don't delete output.  Output is always zipped into a single file for easy download.  Choose this option to prevent output deletion after zipping.",
+      "type": "boolean"
+    },
+    "gear-save-intermediate-output": {
+      "default": false,
+      "description": "Gear will save ALL intermediate output into {{bids_app_binary}}_work.zip",
+      "type": "boolean"
+    },
+    "mem_mb": {
+      "description": "Maximum memory to use (MB). Leave blank or set to 0 to use the maximum available in the system.",
+      "optional": true,
+      "type": "integer"
+    },
+    "n_cpus": {
+      "description": "Number of CPUs/cores to use. Leave blank or set to 0 to use the maximum available in the system.",
+      "optional": true,
+      "type": "integer"
     }
   },
   "custom": {
+    "analysis-level": "participant",
+    "bids-app-binary": "{{Name of the BIDS app. e.g., qsiprep}}",
+    "bids-app-modalities": [
+      "anat",
+      "func",
+      "dwi",
+      "perf",
+      "fmap"
+    ],
     "flywheel": {
-      "suite": "FW-Templates",
-      "show-job": true
+      "suite": "BIDS Apps"
     },
     "gear-builder": {
-      "category": "converter",
-      "image": "flywheel/skeleton:0.3.0"
+      "category": "analysis",
+      "image": "flywheel/bids-app-template:0.1.0"
+    },
+    "license": {
+      "dependencies": [
+        {
+          "name": "Other",
+          "url": "{{url of the packages the BIDS app uses}}"
+        }
+      ],
+      "main": {
+        "name": "BSD-3-Clause",
+        "url": "BIDS App URL"
+      },
+      "non-commercial-use-only": false
     }
   },
   "description": "{{ }}",
-  "environment": {},
+  "environment": {
+      "FLYWHEEL": "/flywheel/v0"
+  },
   "inputs": {
-    "{{text-input}}": {
+    "archived_runs": {
       "base": "file",
-      "description": "{{A text file.}}"
+      "description": "Zip file with data or analyses from previous runs (e.g., FreeSurfer archive)",
+      "optional": true
     }
   },
-  "label": "FW skeleton gear",
-  "license": "Other",
+  "label": "FW BIDS APP TEMPLATE",
+  "license": "MIT",
   "maintainer": "Flywheel <support@flywheel.io>",
-  "name": "skeleton",
-  "source": "https://gitlab.com/flywheel-io/flywheel-apps/templates/skeleton",
-  "url": "https://gitlab.com/flywheel-io/flywheel-apps/templates/skeleton",
-  "version": "0.3.0"
+  "name": "BIDS App Template",
+  "source": "https://gitlab.com/flywheel-io/flywheel-apps/templates/bids-app-template",
+  "url": "https://gitlab.com/flywheel-io/flywheel-apps/templates/bids-app-template",
+  "version": "0.1.0"
 }

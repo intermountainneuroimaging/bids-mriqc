@@ -9,6 +9,7 @@ from pathlib import Path
 
 import pytest
 from importlib_resources import files
+
 from fw_gear_bids_app_template.utils import dry_run, helpers
 
 
@@ -47,6 +48,9 @@ def test_pretend_it_ran(tmpdir, caplog, search_caplog_contains, mocked_app_conte
     assert [op.exists(ef) for ef in expected_folders]
     assert op.exists(
         op.join(
-            "output", mocked_app_context.destination_id, "somedir", "sub-TOME3024.html",
+            "output",
+            mocked_app_context.destination_id,
+            "somedir",
+            "sub-TOME3024.html",
         )
     )

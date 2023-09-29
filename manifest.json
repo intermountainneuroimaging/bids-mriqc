@@ -51,7 +51,7 @@
   },
   "custom": {
     "analysis-level": "participant",
-    "bids-app-binary": "{{Name of the BIDS app. e.g., qsiprep}}",
+    "bids-app-binary": "bids-validator",
     "bids-app-modalities": [
       "anat",
       "func",
@@ -70,7 +70,7 @@
       "dependencies": [
         {
           "name": "Other",
-          "url": "{{url of the packages the BIDS app uses}}"
+          "url": "REPLACE: url of the packages the BIDS app uses"
         }
       ],
       "main": {
@@ -80,7 +80,7 @@
       "non-commercial-use-only": false
     }
   },
-  "description": "{{ }}",
+  "description": "REPLACE: Use this template to build Flywheel gears that wrap official BIDS App algorithms. Replace the name of the binary, description, licenses, and any other fields. Limit adding to the config fields as much as possible to leverage the methods in the flywheel_bids_app_toolkit and this template."
   "environment": {
       "FLYWHEEL": "/flywheel/v0"
   },

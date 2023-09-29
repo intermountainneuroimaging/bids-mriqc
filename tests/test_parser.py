@@ -1,20 +1,27 @@
 """Module to test parser.py"""
-
-from os import cpu_count as os_cpu_count
-from unittest.mock import patch
-
 import pytest
-from flywheel_gear_toolkit import GearToolkitContext
 
-import fw_gear_bids_app_template.parser
 from fw_gear_bids_app_template.parser import parse_config
 
+
 @pytest.mark.parametrize(
-    "mock_config_opt",
-    [None,"[{'k':'v'}]"
-        ])
-def test_parse_config(mock_config_opt, mocked_context):
-    mocked_context.config.get.side_effect = lambda x: mock_config_opt
+    "mock_config_dict, expected_debug, expected_config_options",
+    [
+        ({}, None, {}),
+        ({"debug": "DEBUG"}, "DEBUG", {}),
+        ({"debug": "ERROR", "my_opt": "is_boring"}, "ERROR", {"my_opt": "is_boring"}),
+        (
+            {"my_opt_2": "is_educated", "gear-special": "wd-40"},
+            None,
+            {"my_opt_2": "is_educated"},
+        ),
+    ],
+)
+def test_parse_config(
+    mock_config_dict, expected_debug, expected_config_options, mocked_context
+):
+    mocked_context.config.keys.side_effect = [mock_config_dict.keys()]
+    mocked_context.config.get.side_effect = lambda key: mock_config_dict.get(key)
     debug, config_options = parse_config(mocked_context)
-    assert debug == False
-    assert config_options == mock_config_opt
+    assert debug == expected_debug
+    assert config_options == expected_config_options

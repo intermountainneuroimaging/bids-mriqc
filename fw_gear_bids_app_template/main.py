@@ -1,13 +1,21 @@
-"""Main module."""
+"""Main methods that can be customized to run setup and run the BIDS App."""
 
 import logging
-from typing import List, Tuple
+from typing import Dict, List, Tuple
 
 from flywheel_bids_app_toolkit import BIDSAppContext
-from flywheel_bids_app_toolkit.prep import get_bids_data, set_participant_info
+from flywheel_bids.flywheel_bids_app_toolkit.prep import (
+    get_bids_data,
+    set_participant_info,
+)
+from flywheel_bids.flywheel_bids_app_toolkit.utils.query_flywheel import (
+    copy_bidsignore_file,
+)
 from flywheel_gear_toolkit import GearToolkitContext
 from flywheel_gear_toolkit.licenses.freesurfer import install_freesurfer_license
 from flywheel_gear_toolkit.utils.file import sanitize_filename
+
+log = logging.getLogger(__name__)
 
 
 def setup_bids_env(gear_context: GearToolkitContext) -> Tuple[BIDSAppContext, List]:
@@ -37,8 +45,12 @@ def setup_bids_env(gear_context: GearToolkitContext) -> Tuple[BIDSAppContext, Li
         gear_context,
         app_context.bids_app_modalities,
         tree_title=tree_title,
-        dry_run=app_context.gear_dry_run,
+        download_data=app_context.gear_dry_run,
     )
+
+    # Any run through BIDS validator needs a .bidsignore file, if the user
+    # wants to skip dirs or files en masse.
+    copy_bidsignore_file(gear_context.input_dir, app_context.bids_dir)
 
     if app_context.analysis_level == "participant":
         app_context = set_participant_info(app_context, participant_info)
@@ -46,9 +58,18 @@ def setup_bids_env(gear_context: GearToolkitContext) -> Tuple[BIDSAppContext, Li
     return app_context, errors
 
 
-def tweak_command(command: List[str], config_options: Dict) -> List[str]:
+def customize_bids_command(command: List[str], config_options: Dict) -> List[str]:
     """
     Any special adjustments that a given BIDS app may have for the command are completed here.
-    See flywheel_bids_app_toolkit.cammonds.clean_generated_command for examples.
+    See flywheel_bids.flywheel_bids_app_toolkit.commands.clean_generated_bids_command for examples.
+
+    Args:
+        command (List): Command previously generated from the config.json by
+            the GearToolkit, which would run the BIDS App, but will now have modifications.
+        config_options (Dict): Dict formed from specific fields that were added
+            to the manifest for this BIDS App (rather than relying on the
+            `bids_app_command` field).
+    Returns:
+        command (List): The modified BIDS App command that will be sent to the algorithm.
     """
     return command

@@ -52,7 +52,10 @@ def test_generate_command(skip_bids_validation, bids_app_args):
         "skip-bids-validation": skip_bids_validation,
     }
 
-    cmd = main.generate_command(gear_options, app_options,)
+    cmd = main.generate_command(
+        gear_options,
+        app_options,
+    )
 
     # Check that the returned cmd:
     # - is a list of strings:
@@ -106,7 +109,10 @@ def test_generate_command_space_separated_argument(mocked_gear_options):
         "single-arg-value": single_arg_value,
     }
 
-    cmd = main.generate_command(mocked_gear_options, app_options,)
+    cmd = main.generate_command(
+        mocked_gear_options,
+        app_options,
+    )
 
     # Check that all app_options are in the cmd:
     for key, val in app_options.items():
@@ -128,7 +134,10 @@ def test_generate_command_recon_only(mock_unzip, mocked_gear_options):
         "recon-input": mock_path,
     }
 
-    cmd = main.generate_command(mocked_gear_options, app_options,)
+    cmd = main.generate_command(
+        mocked_gear_options,
+        app_options,
+    )
 
     # Find the occurrences of the recon-input path, which should happen twice
     regex = re.compile(mock_path, re.S)
@@ -148,7 +157,10 @@ def test_generate_command_recon_only(mock_unzip, mocked_gear_options):
         "recon-input": mock_path,
     }
 
-    cmd = main.generate_command(mocked_gear_options, app_options,)
+    cmd = main.generate_command(
+        mocked_gear_options,
+        app_options,
+    )
 
     # Find the occurrences of the recon-input path, which should happen twice
     regex = re.compile(mock_path, re.S)
@@ -169,7 +181,10 @@ def test_generate_command_recon_only(mock_unzip, mocked_gear_options):
         "recon-input": mock_zipped_path,
     }
 
-    cmd = main.generate_command(mocked_gear_options, app_options,)
+    cmd = main.generate_command(
+        mocked_gear_options,
+        app_options,
+    )
 
     # Find the occurrences of the recon-input path, which should happen twice
     regex = re.compile(mock_path, re.S)
@@ -264,7 +279,10 @@ def test_generate_command_space_separated_argument(mocked_gear_options):
         "single-arg-value": single_arg_value,
     }
 
-    cmd = main.generate_command(mocked_gear_options, app_options,)
+    cmd = main.generate_command(
+        mocked_gear_options,
+        app_options,
+    )
 
     # Check that all app_options are in the cmd:
     for key, val in app_options.items():
@@ -274,7 +292,7 @@ def test_generate_command_space_separated_argument(mocked_gear_options):
             assert f"--{key}={val}" in cmd
 
 
-@patch("flywheel_bids_app_toolkit.commands.unzip_recon_files")
+@patch("flywheel_bids.flywheel_bids_app_toolkit.commands.unzip_recon_files")
 def test_generate_command_recon_only(mock_unzip, mocked_gear_options):
     """Test for the case that an argument value is a space-separated list"""
 
@@ -286,7 +304,10 @@ def test_generate_command_recon_only(mock_unzip, mocked_gear_options):
         "recon-input": mock_path,
     }
 
-    cmd = main.generate_command(mocked_gear_options, app_options,)
+    cmd = main.generate_command(
+        mocked_gear_options,
+        app_options,
+    )
 
     # Find the occurrences of the recon-input path, which should happen twice
     regex = re.compile(mock_path, re.S)
@@ -294,7 +315,7 @@ def test_generate_command_recon_only(mock_unzip, mocked_gear_options):
     assert mock_unzip.called_once
 
 
-@patch("flywheel_bids_app_toolkit.commands.unzip_recon_files")
+@patch("flywheel_bids.flywheel_bids_app_toolkit.commands.unzip_recon_files")
 def test_generate_command_recon_only(mock_unzip, mocked_gear_options):
     """Test for the case that an argument value is a space-separated list"""
 
@@ -306,7 +327,10 @@ def test_generate_command_recon_only(mock_unzip, mocked_gear_options):
         "recon-input": mock_path,
     }
 
-    cmd = main.generate_command(mocked_gear_options, app_options,)
+    cmd = main.generate_command(
+        mocked_gear_options,
+        app_options,
+    )
 
     # Find the occurrences of the recon-input path, which should happen twice
     regex = re.compile(mock_path, re.S)
@@ -314,7 +338,10 @@ def test_generate_command_recon_only(mock_unzip, mocked_gear_options):
     assert mock_unzip.called_once
 
 
-@patch("flywheel_bids_app_toolkit.commands.ZipFile", return_value=["a", "b", "c"])
+@patch(
+    "flywheel_bids.flywheel_bids_app_toolkit.commands.ZipFile",
+    return_value=["a", "b", "c"],
+)
 def test_generate_command_recon_only(mock_unzip, mocked_gear_options):
     """Test for the case that an argument value is a space-separated list"""
 
@@ -327,7 +354,10 @@ def test_generate_command_recon_only(mock_unzip, mocked_gear_options):
         "recon-input": mock_zipped_path,
     }
 
-    cmd = main.generate_command(mocked_gear_options, app_options,)
+    cmd = main.generate_command(
+        mocked_gear_options,
+        app_options,
+    )
 
     # Find the occurrences of the recon-input path, which should happen twice
     regex = re.compile(mock_path, re.S)
@@ -338,7 +368,7 @@ def test_generate_command_recon_only(mock_unzip, mocked_gear_options):
 # Test 2 use cases:
 # - dry_run = True/False
 @pytest.mark.parametrize("dry_run", [True, False])
-@patch("flywheel_bids_app_toolkit.commands.generate_command")
+@patch("flywheel_bids.flywheel_bids_app_toolkit.commands.generate_command")
 def test_run(
     mock_generate_command,
     tmpdir,
@@ -376,7 +406,7 @@ def test_run(
     assert search_caplog_contains(caplog, "Executing command", " ".join(my_cmd))
 
 
-@patch("flywheel_bids_app_toolkit.commands.generate_command")
+@patch("flywheel_bids.flywheel_bids_app_toolkit.commands.generate_command")
 def test_run_error(mock_generate_command, tmpdir, caplog, mock_app_context):
     """Unit tests for run when running the command throws an error"""
 

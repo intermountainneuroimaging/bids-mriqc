@@ -5,8 +5,8 @@ from pathlib import Path
 from typing import List, Union
 
 from flywheel_bids_app_toolkit import BIDSAppContext
-from flywheel_bids_app_toolkit.commands import run_bids_algo
-from flywheel_bids_app_toolkit.utils.helpers import make_dirs_and_files
+from flywheel_bids.flywheel_bids_app_toolkit.commands import run_bids_algo
+from flywheel_bids.flywheel_bids_app_toolkit.utils.helpers import make_dirs_and_files
 
 log = logging.getLogger(__name__)
 

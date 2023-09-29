@@ -11,20 +11,26 @@ keywords = [
 ]
 repository = "https://gitlab.com/flywheel-io/flywheel-apps/templates/bids-app-template"
 classifiers = [
+
     "Topic :: Scientific/Engineering"
+]
+packages = [
+    {include="fw_gear_bids_app_template", from="."}
 ]
 
 [tool.poetry.dependencies]
-python = "^3.8"
+python = "^3.9"
 flywheel-gear-toolkit = {version="^0.6"}
-flywheel-bids = {git = "https://gitlab.com/flywheel-io/public/bids-client.git", branch = "dev-GEAR-3018-add-bidsApp"}
+flywheel-bids = {git = "https://gitlab.com/flywheel-io/public/bids-client.git", branch = "dev-GEAR-3018-add-bidsApp", develop=true}
+#flywheel-bids = {path = "../bids-client", develop=true}
 
 [tool.poetry.dev-dependencies]
+psutil = "^5.9.0"
 pytest = "^6.1.2"
 pytest-cov = "^3.0.0"
 pytest-mock = "^3.8.2"
 
 
 [build-system]
-requires = ["poetry>=1.1.12"]
+requires = ["poetry>=1.2"]
 build-backend = "poetry.core.masonry.api"

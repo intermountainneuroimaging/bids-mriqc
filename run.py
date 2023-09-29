@@ -1,47 +1,65 @@
 #!/usr/bin/env python
 """The run script."""
-import json
 import logging
-import os
-import shutil
 import sys
-from pathlib import Path
-from typing import List, Tuple, Union
-
-from flywheel_bids_app_toolkit import BIDSAppContext
 
 # This design with the main interfaces separated from a gear module (with main and
 # parser) allows the gear module to be publishable, so it can then be imported in
 # another project, which enables chaining multiple gears together.
-from flywheel_bids_app_toolkit.commands import generate_command, run_bids_algo
-
-from flywheel_bids_app_toolkit.prep import get_fw_details
-from flywheel_bids_app_toolkit.report import package_output, save_metadata
-
+from flywheel_bids.flywheel_bids_app_toolkit.commands import (
+    generate_bids_command,
+    run_bids_algo,
+)
+from flywheel_bids.flywheel_bids_app_toolkit.report import package_output, save_metadata
+from flywheel_bids.flywheel_bids_app_toolkit.utils.query_flywheel import get_fw_details
 from flywheel_gear_toolkit import GearToolkitContext
 
-
-from fw_gear_bids_app_template.main import setup_bids_env, tweak_command
+from fw_gear_bids_app_template.main import customize_bids_command, setup_bids_env
 from fw_gear_bids_app_template.parser import parse_config
 from fw_gear_bids_app_template.utils.dry_run import pretend_it_ran
 
 log = logging.getLogger(__name__)
 
-# pylint: disable=too-many-locals,too-many-statements
+
 def main(gear_context: GearToolkitContext) -> None:
-    """Parses config and runs."""
+    """Main orchestrating method.
+
+    Section 1: Set up the Docker container with all the env variables,
+    licenses, and BIDS data.
+
+    Section 2: Parse the commandline input provided via the config.json
+    under the "bids_app_command" field. If the BIDS App has idiosyncracies
+    in the formatting of kwargs or required custom fields in the manifest
+    for the config, then the output from the standard `generate_command`
+    method (from `flywheel_bids_app_toolkit`) is amended. If possible,
+    design the manifest to highlight inputting the command over breaking
+    out the individual args and kwargs, as this strategy will be more flexible
+    and maintainable between versions. As a bonus, much of the testing can be
+    handled within flywheel_bids_app_toolkit if this strategy is employed.
+
+    Section 3: Handle dry-runs, BIDS download (not validation) errors, and
+    actual algorithm runs.
+
+    Section 4: Zip the html, result, and other files so the container can
+    spin down gracefully and provide the analysis for review and future use.
+    """
+
+    # Section 1
     warnings = []
     destination, gear_builder_info, container = get_fw_details(gear_context)
     # Setup FreeSurfer, BIDSAppContext, and download BIDS data
     app_context, errors = setup_bids_env(gear_context)
     debug, config_options = parse_config(gear_context)
-    command = generate_command(app_context)
+
+    # Section 2
+    command = generate_bids_command(app_context)
 
     if config_options:
-        # Use tweak_command to modify the BIDS app command if there are
+        # Use customize_bids_command to modify the BIDS app command if there are
         # specific ways that this BIDS app is called.
-        command = tweak_command(command)
+        command = customize_bids_command(command)
 
+    # Section 3
     if len(errors) > 0:
         e_code = 1
         log.info(
@@ -50,7 +68,7 @@ def main(gear_context: GearToolkitContext) -> None:
 
     elif app_context.gear_dry_run:
         e_code = 0
-        pretend_it_ran(app_context)
+        pretend_it_ran(app_context, command)
         save_metadata(
             gear_context,
             app_context.analysis_output_dir / app_context.bids_app_binary,
@@ -84,6 +102,7 @@ def main(gear_context: GearToolkitContext) -> None:
                 app_context.bids_app_binary,
             )
 
+    # Section 4
     # Clean up, move all results to the output directory.
     # post_run should be run regardless of dry-run or exit code.
     # It will be run even in the event of an error, so that the partial results are

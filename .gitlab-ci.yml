@@ -4,6 +4,6 @@ include:
     file: ci/default.yml
 
 variables:
-  #PYVER: "2.7"
-  PYTEST_COV_FAIL_UNDER: 0  # Set pytest coverage to 0
-  DEBUG: "9" # Set debug mode to print out executed command on qa-ci
+  PYVER: "3.9"
+  PYTEST_COV_FAIL_UNDER: 70  # Set pytest coverage to 0
+  DEBUG: "3" # Set debug mode to print out executed command on qa-ci

@@ -9,42 +9,20 @@ from unittest import TestCase
 from unittest.mock import MagicMock
 
 import pytest
-from flywheel_bids_app_toolkit import BIDSAppContext
+from flywheel_bids.flywheel_bids_app_toolkit import BIDSAppContext
 from flywheel_gear_toolkit import GearToolkitContext
 from flywheel_gear_toolkit.utils.zip_tools import unzip_archive
 
 
 @pytest.fixture
-def mocked_acquisition():
-    def _my_mock(parent_type="session"):
-        """Return a mocked acquisition with a specific parent.type"""
-        my_acquisition = MagicMock()
-        my_acquisition.parent.type = parent_type
-        return my_acquisition
-
-    return _my_mock
+def mock_context(mocker):
+    mocker.patch("flywheel_gear_toolkit.GearToolkitContext")
+    gtk_context = MagicMock(autospec=True)
+    return gtk_context
 
 
 @pytest.fixture
-def mocked_context(mocked_acquisition):
-    """Return a mocked GearToolkitContext"""
-    mocked_manifest = {
-        "name": "test",
-        "custom": {"gear-builder": {"image": "foo/bar:v1.0"}},
-    }
-    mocked_destination_id = "my_fake_acq_dest_id_123abc"
-    inputs = {}
-    return MagicMock(
-        spec=GearToolkitContext,
-        manifest=mocked_manifest,
-        client={mocked_destination_id: mocked_acquisition()},
-        destination={"id": mocked_destination_id},
-        inputs=inputs,
-    )
-
-
-@pytest.fixture
-def extended_gear_context(mock_context):
+def extended_gear_context(mock_context, tmp_path):
     """Extend the basic GTK context for the BIDSApp context
 
     To return the desired side effects for mock_context.config.get.side_effect,
@@ -52,19 +30,31 @@ def extended_gear_context(mock_context):
     lambda function at the test level will allow us to combine this test fixture
     with parametrize and change various values on the fly.
     """
-    mock_context.get.side_effect = lambda key: {"parent_container_type": "project"}.get(
-        key
-    )
-    mock_context.output_dir = Path("/path/to/output_dir")
-    mock_context.work_dir = Path("/path/to/work_dir")
-    mock_context.destination = {"id": "output_destination_id"}
+    mock_context.client.return_value.get.side_effect = lambda key: {
+        "destination": "aex"
+    }.get(key)
+    mock_context.output_dir = Path(tmp_path) / Path("output_dir")
+    mock_context.work_dir = Path(tmp_path) / Path("work_dir")
+    mock_context.destination = {
+        "id": "output_destination_id",
+        "parent": {"type": "project"},
+    }
     mock_context.config.get.side_effect_dict = {
-        "bids_app_command": "something_bids_related /path/1 /path/2 participant --extra_option extra_opt",
+        "bids_app_command": "something_bids_related /path/1 "
+        "/path/2 participant --extra_option extra_opt",
         "app-dry-run": True,
         "gear-save-intermediate-output": True,
         "gear-dry-run": False,
         "gear-keep-output": False,
+        "random_extra_ui_key": None,
     }
+    mock_context.config.get.side_effect = lambda key: mock_context.config.get.side_effect_dict.get(
+        key, None
+    )
+    mock_context.get_input.side_effect = lambda key: {
+        "api_key": "fake_key",
+        "random_extra_ui_key": None,
+    }.get(key)
     mock_context.manifest.get.side_effect = lambda key: {
         "custom": {
             "bids-app-binary": "something_bids_related",
@@ -76,7 +66,7 @@ def extended_gear_context(mock_context):
 
 
 @pytest.fixture
-def mocked_context_for_project_level(mocked_acquisition):
+def mocked_context_for_project_level(mock_acquisition):
     """Return a mocked GearToolkitContext with a "project" destination parent."""
     mocked_manifest = {
         "name": "test",
@@ -86,7 +76,7 @@ def mocked_context_for_project_level(mocked_acquisition):
     return MagicMock(
         spec=GearToolkitContext,
         manifest=mocked_manifest,
-        client={mocked_destination_id: mocked_acquisition("project")},
+        client={mocked_destination_id: mock_acquisition("project")},
         destination={"id": mocked_destination_id},
     )
 

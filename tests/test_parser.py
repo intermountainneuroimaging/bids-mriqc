@@ -1,7 +1,7 @@
 """Module to test parser.py"""
 import pytest
 
-from fw_gear_bids_app_template.parser import parse_config
+from fw_gear_bids_mriqc.parser import parse_config
 
 
 @pytest.mark.parametrize(
@@ -18,10 +18,10 @@ from fw_gear_bids_app_template.parser import parse_config
     ],
 )
 def test_parse_config(
-    mock_config_dict, expected_debug, expected_config_options, mocked_context
+    mock_config_dict, expected_debug, expected_config_options, mock_context
 ):
-    mocked_context.config.keys.side_effect = [mock_config_dict.keys()]
-    mocked_context.config.get.side_effect = lambda key: mock_config_dict.get(key)
-    debug, config_options = parse_config(mocked_context)
+    mock_context.config.items.side_effect = [mock_config_dict.items()]
+    mock_context.config.get.side_effect = lambda key: mock_config_dict.get(key)
+    debug, config_options = parse_config(mock_context)
     assert debug == expected_debug
     assert config_options == expected_config_options

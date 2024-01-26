@@ -9,9 +9,7 @@ log = logging.getLogger(__name__)
 
 # This function mainly parses gear_context's config.json file and returns relevant
 # inputs and options.
-def parse_config(
-    gear_context: GearToolkitContext,
-) -> Tuple[bool, Dict]:
+def parse_config(gear_context: GearToolkitContext,) -> Tuple[bool, Dict]:
     """Search config for extra settings not used by BIDSAppContext.
 
     Args:
@@ -27,13 +25,12 @@ def parse_config(
 
     debug = gear_context.config.get("debug")
     config_options = {}
-    for key in gear_context.config.keys():
-        if not key.startswith("gear-") and key not in [
-            "debug",
-            "bids_app_command",
-            "mem_mb",
-            "n_cpus",
-        ]:
+    for key, val in gear_context.config.items():
+        if (
+            not key.startswith("gear-")
+            and key not in ["debug", "bids_app_command",]
+            and val
+        ):
             config_options[key] = gear_context.config.get(key)
 
     return debug, config_options

@@ -1,7 +1,7 @@
 [tool.poetry]
-name = "fw-gear-bids-app-template"
-version = "0.1.0"
-description = "{{description}}"
+name = "fw-gear-bids-mriqc"
+version = "2.0.0+23.1.0"
+description = "Flywheel BIDS MRIQC"
 authors = ["Flywheel <support@flywheel.io>"]
 readme = "README.md"
 license = "MIT"
@@ -9,28 +9,65 @@ keywords = [
     "Flywheel",
     "Gears"
 ]
-repository = "https://gitlab.com/flywheel-io/flywheel-apps/templates/bids-app-template"
+repository = "https://gitlab.com/flywheel-io/scientific-solutions/gears/bids-apps/bids-mriqc"
 classifiers = [
 
     "Topic :: Scientific/Engineering"
 ]
 packages = [
-    {include="fw_gear_bids_app_template", from="."}
+    {include="fw_gear_bids_mriqc", from="."}
 ]
 
 [tool.poetry.dependencies]
 python = "^3.9"
-flywheel-gear-toolkit = {version="^0.6"}
-flywheel-bids = {git = "https://gitlab.com/flywheel-io/public/bids-client.git", branch = "dev-GEAR-3018-add-bidsApp", develop=true}
-#flywheel-bids = {path = "../bids-client", develop=true}
+flywheel-gear-toolkit = {git = "https://gitlab.com/flywheel-io/public/gear-toolkit.git", rev= "a08d65a66c3b76593e96fc83f53ac998d7a5abf1"}
+flywheel-bids = {git = "https://gitlab.com/flywheel-io/public/bids-client.git", rev="fda4f4503f4c7507bdbb4a8686deb4d1c0bf217a"}
+jsonschema="^4.0"
 
 [tool.poetry.dev-dependencies]
 psutil = "^5.9.0"
 pytest = "^6.1.2"
 pytest-cov = "^3.0.0"
 pytest-mock = "^3.8.2"
+jupyter = "^1.0.0"
 
+[tool.ruff]
+ignore = ["D", "E722", "F401", "F841", "PLR0915"]
+# Allow fix for all enabled rules (when `--fix`) is provided.
+fixable = ["ALL"]
+unfixable = []
+# Exclude a variety of commonly ignored directories.
+exclude = [
+    ".bzr",
+    ".direnv",
+    ".eggs",
+    ".git",
+    ".git-rewrite",
+    ".hg",
+    ".mypy_cache",
+    ".nox",
+    ".pants.d",
+    ".pytype",
+    ".ruff_cache",
+    ".svn",
+    ".tox",
+    ".venv",
+    "__pypackages__",
+    "_build",
+    "buck-out",
+    "build",
+    "dist",
+    "node_modules",
+    "venv",
+    "docs",
+    "setup.py"
+]
+# Same as Black
+line-length = 120
+# Allow unused variables when underscore-prefixed.
+dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
+target-version = "py39"
 
 [build-system]
-requires = ["poetry>=1.2"]
+requires = ["poetry-core>=1.0.8"]
 build-backend = "poetry.core.masonry.api"

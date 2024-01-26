@@ -4,7 +4,7 @@ import logging
 from pathlib import Path
 from typing import List, Union
 
-from flywheel_bids_app_toolkit import BIDSAppContext
+from flywheel_bids.flywheel_bids_app_toolkit import BIDSAppContext
 from flywheel_bids.flywheel_bids_app_toolkit.commands import run_bids_algo
 from flywheel_bids.flywheel_bids_app_toolkit.utils.helpers import make_dirs_and_files
 
@@ -15,7 +15,9 @@ def pretend_it_ran(app_context: BIDSAppContext, command: List[str]) -> None:
     """Make some output like the command would have done only fake.
 
     Args:
-        app_context (BIDSAppContext):
+        app_context (BIDSAppContext): information specific to this
+                    BIDS app and gear run
+        command (list): BIDS App command list to pass to subprocess
     """
     # 1) Call run.
     #    Because app_context.gear_dry_run is True, run.exec_command will log the call,

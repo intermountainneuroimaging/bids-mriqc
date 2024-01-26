@@ -1,4 +1,7 @@
-# {{gear_name}} ({{gear_label}})
+# BIDS MRIQC
+
+BIDS MRIQC: Automatic prediction of quality and visual reporting of MRI scans in BIDS
+format
 
 ## Overview
 
@@ -8,26 +11,31 @@
 
 ### Summary
 
-*{From the "description" section of the manifest}*
+MRIQC (23.1.0) extracts no-reference image quality metrics (IQMs) from T1w and T2w
+structural and functional magnetic resonance imaging data. For more commandline options,
+please visit https://mriqc.readthedocs.io/en/latest/running.html.
 
 ### Cite
 
-*{From the "cite" section of the manifest}*
+Esteban O, Birman D, Schaer M, Koyejo OO, Poldrack RA, Gorgolewski KJ; MRIQC: Advancing
+the Automatic Prediction of Image Quality in MRI from Unseen Sites; PLOS ONE 12(9):
+e0184661; doi:10.1371/journal.pone.0184661
 
-### License 
+### License
 
-*License:* *{From the "license" section of the manifest. Be as specific as possible, specifically when marked as Other.}*
+*License:*
+Other
 
 ### Classification
 
-*Category:* *{From the "custom.gear-builder.category" section of the manifest}*
+*Category:* Analysis
 
 *Gear Level:*
 
-- [ ] Project
-- [ ] Subject
-- [ ] Session
-- [ ] Acquisition
+- [x] Project
+- [x] Subject
+- [x] Session
+- [x] Acquisition
 - [ ] Analysis
 
 ----
@@ -38,98 +46,129 @@
 
 ### Inputs
 
-- *{Input-File}*
-  - __Name__: *{From "inputs.Input-File"}*
-  - __Type__: *{From "inputs.Input-File.base"}*
-  - __Optional__: *{From "inputs.Input-File.optional"}*
-  - __Classification__: *{Based on "inputs.Input-File.base"}*
-  - __Description__: *{From "inputs.Input-File.description"}*
-  - __Notes__: *{Any additional notes to be provided by the user}*
+- archived_runs
+    - "Zip file with data or analyses from previous runs (e.g., FreeSurfer archive"
 
 ### Config
 
-- *{Config-Option}*
-  - __Name__: *{From "config.Config-Option"}*
-  - __Type__: *{From "config.Config-Option.type"}*
-  - __Description__: *{From "config.Config-Option.description"}*
-  - __Default__: *{From "config.Config-Option.default"}*
+- bids_app_command
+    - OPTIONAL
+    - __Type__: free-text
+    - The gear will automatically run the defaults for the algorithm if nothing is
+      written in this box (i.e., mriqc bids_dir output_dir participant).
+      If you wish to provide the command as you would on a CLI, input the exact
+      command here. Flywheel will automatically update the BIDS_dir, output_dir, and
+      analysis_level. (e.g., `mriqc bids_dir output participant [arg1 [arg2 ...]]
+      --no-sub`, where kwargs are any combination of kwargs that are valid for MRIQC)
+    - Note: If you use a kwarg here, don't worry about putting a value in the box for
+      the same kwarg below. Any kwarg that you see called out in the config UI and that
+      is given a value will supersede the kwarg:value given as part of the
+      bids_app_command.
+    -
+- debug
+    - __Type__: Boolean
+    - __Default__: false
+    - Verbosity of log messages; default results in INFO level, True will log DEBUG
+      level
+
+- gear-dry-run
+    - __Type__: Boolean
+    - __Default__: false (set to true for template)
+    - Do everything related to Flywheel except actually execute BIDS App command.
+    - Note: This is NOT the same as running the BIDS app command with `--dry-run`.
+      gear-dry-run will not actually download the BIDS data, attempt to run the BIDS app
+      command, or do any metadata/result updating.
+
+- gear-post-processing-only
+    - Requires a previous, successful mriqc analysis/gear run archive file
+    - Don't run the algorithm; just update the metadata and generate reports based off
+      the archived results.
+    - Default is false; the entire BIDS download and algorithm will run
+  
+- no-sub
+    - Turn off submission of anonymized quality metrics to MRIQC’s metrics repository
+    - Default reports anonymized metrics
 
 ### Outputs
 
 #### Files
 
-*{A list of output files (if possible?)}*
-
-- *{Output-File}*
-  - __Name__: *{From "outputs.Input-File"}*
-  - __Type__: *{From "outputs.Input-File.base"}*
-  - __Optional__: *{From "outputs.Input-File.optional"}*
-  - __Classification__: *{Based on "outputs.Input-File.base"}*
-  - __Description__: *{From "outputs.Input-File.description"}*
-  - __Notes__: *{Any additional notes to be provided by the user}*
+- bids-mriqc*.zip
+    - Contains the htmls for the quality report
+- sub-{label}_ses-{label}*.html.zip
+    - Contains the html quality report for the specific file(s))
+- job.log
+    - Info about what happened on Flywheel
+- mriqc_log.txt
+    - Nipype's report of the commands that transpired as called by the algorithm
+- bids_tree
+    - Report from `export_bids` on Flywheel
+    -
 
 #### Metadata
 
-Any notes on metadata created by this gear
+IQMs will be reported under the file.info.IQM field for files that were analyzed.
 
 ### Pre-requisites
 
-This section contains any prerequisites
+BIDS curation on Flywheel, so that there are entities in file.info.BIDS
 
 #### Prerequisite Gear Runs
 
-A list of gears, in the order they need to be run:
+Only curation is a pre-requisite.
 
-1. __*{Gear-Name}__*
-    - Level: *{Level at which gear needs to be run}*
+1. Run the curate-bids gear.
+    - Run curation for the subject at a minimum. Project-level analyses will need to
+      have had curation run on across all subjects.
 
 #### Prerequisite Files
 
-A list of any files (OTHER than those specified by the input) that the gear will need.
-If possible, list as many specific files as you can:
-
-1. ____{File-Name}__*
-    - Origin: *{Gear-Name, or Scanner, or Upload?}*
-    - Level: *{Container level the file is at}*
-    - Classification: *{Required classification(s) that the file can be}*
-
-#### Prerequisite Metadata
-
-A description of any metadata that is needed for the gear to run.
-If possible, list as many specific metadata objects that are required:
-
-1. __*{Metadata-Key}__*
-    - Location: *{Nested Metadata Location (info.object1, age, etc)}*
-    - Level: *{Container level that metadata is at}*
+- T1w, T2w, and/or BOLD images.
+- Individual DWI may or may not work. The DWI workflow for the group level is currently
+  broken per BUG #1128.
 
 ## Usage
 
-This section provides a more detailed description of the gear, including not just WHAT it does, but HOW it works in flywheel.
+Flywheel BIDS App gears allow the user to provide the commandline input that they would
+normally run for the BIDS app. The BIDS App Toolkit parses any arguments beyond the
+typical `app_name BIDS_dir output_dir analysis_level` when creating the BIDSAppContext
+object (see flywheel_bids.flywheel_bids_app_toolkit.context.parse_bids_app_commands).
+
+For Gear Workflow specifics, see CONTRIBUTING.md >> Gear Workflow
 
 ### Description
 
-*{A detailed description of how the gear works}*
+Launch the gear from the project level to run a "group" analysis, as well as update all
+participants' metadata with IQM results.
+
+Launch the gear from the subject or session level to run a quick check on the images,
+while providing IQM results for only the subject or acquisition.
+
+BIDS-MRIQC is built off the official MRIQC Docker image. The gear downloads all the data
+that has undergone BIDS curation for the level from which the gear is launched. The BIDS
+directory structure and naming is created/preserved for the MRIQC algorithm to use.
+
+For full flexibility, the bids_app_command field in the input tab should be used as one
+would use the commandline to launch an MRIQC analysis. The gear will parse the command
+and substitute any Flywheel-specific pieces, so the command can be as simple
+as `mriqc bids_dir output participant --my-arg(s)`, where "--my-arg(s)" are any
+combination of kwargs that are valid for MRIQC. If no command is supplied, the gear will
+proceed with the simplest, default command, `mriqc bids_dir output_dir analysis_level`.
 
 #### File Specifications
 
-This section contains specifications on any input files that the gear may need
-
-##### *{Input-File}*
-
-A description of the input file
-
 ### Workflow
-
-A picture and description of the workflow
 
 ```mermaid
 graph LR;
-    A[Input-File]:::input --> C;
-    C[Upload] --> D[Parent Container <br> Project, Subject, etc];
-    D:::container --> E((Gear));
-    E:::gear --> F[Analysis]:::container;
+    A[default mriqc command]:::input --> D[Parser];
+    B[optional mriqc command]:::input --> D;
+    C[Configuration<br>options]:::input --> D;
+    D:::parser --> E((mriqc));
+    E:::gear --> F[HTML reports]:::parser;
+    E:::gear --> G[IQM metadata]:::parser
     
-    classDef container fill:#57d,color:#fff
+    classDef parser fill:#57d,color:#fff
     classDef input fill:#7a9,color:#fff
     classDef gear fill:#659,color:#fff
 
@@ -137,27 +176,19 @@ graph LR;
 
 Description of workflow
 
-1. Upload file to container
-1. Select file as input to gear
-1. Geat places output in Analysis
+1. Select and supply configuration options
+1. Gear parses and cleans options and configurations for `mriqc`
+1. Gear uploads HTML reports and IQM results
 
 ### Use Cases
 
-This section is very gear dependent, and covers a detailed walkthrough of some use cases.  Should include Screenshots, example files, etc.
-
-#### Use Case 1
-
-__*Conditions__*:
-
-- *{A list of conditions that result in this use case}*
-- [ ] Possibly a list of check boxes indicating things that are absent
-- [x] and things that are present
-
-*{Description of the use case}*
+Run to assess MRI quality.
 
 ### Logging
 
-An overview/orientation of the logging and how to interpret it.
+Debug is the highest number of messages and will report some locations/options and all
+errors. If unchecked in the configuration tab, only INFO and higher priority level log
+messages will be reported.
 
 ## FAQ
 

@@ -12,11 +12,13 @@ from flywheel_bids.flywheel_bids_app_toolkit.commands import (
 )
 from flywheel_bids.flywheel_bids_app_toolkit.report import package_output, save_metadata
 from flywheel_bids.flywheel_bids_app_toolkit.utils.query_flywheel import get_fw_details
+from flywheel_bids.flywheel_bids_app_toolkit.utils.helpers import check_bids_dir
 from flywheel_gear_toolkit import GearToolkitContext
 
-from fw_gear_bids_app_template.main import customize_bids_command, setup_bids_env
-from fw_gear_bids_app_template.parser import parse_config
-from fw_gear_bids_app_template.utils.dry_run import pretend_it_ran
+from fw_gear_bids_mriqc.main import customize_bids_command, setup_bids_env
+from fw_gear_bids_mriqc.parser import parse_config
+from fw_gear_bids_mriqc.utils.dry_run import pretend_it_ran
+from fw_gear_bids_mriqc.utils.helpers import analyze_participants, extra_post_processing
 
 log = logging.getLogger(__name__)
 
@@ -24,11 +26,11 @@ log = logging.getLogger(__name__)
 def main(gear_context: GearToolkitContext) -> None:
     """Main orchestrating method.
 
-    Section 1: Set up the Docker container with all the env variables,
+    Section 1: Set up the Docker gear_name_and_version with all the env variables,
     licenses, and BIDS data.
 
     Section 2: Parse the commandline input provided via the config.json
-    under the "bids_app_command" field. If the BIDS App has idiosyncracies
+    under the "bids_app_command" field. If the BIDS App has idiosyncrasies
     in the formatting of kwargs or required custom fields in the manifest
     for the config, then the output from the standard `generate_command`
     method (from `flywheel_bids_app_toolkit`) is amended. If possible,
@@ -40,88 +42,105 @@ def main(gear_context: GearToolkitContext) -> None:
     Section 3: Handle dry-runs, BIDS download (not validation) errors, and
     actual algorithm runs.
 
-    Section 4: Zip the html, result, and other files so the container can
+    Section 4: Zip the html, result, and other files so the gear_name_and_version can
     spin down gracefully and provide the analysis for review and future use.
     """
 
     # Section 1
-    warnings = []
-    destination, gear_builder_info, container = get_fw_details(gear_context)
+    # Collect FW-specific information
+    destination, _, gear_name_and_version = get_fw_details(gear_context)
+
     # Setup FreeSurfer, BIDSAppContext, and download BIDS data
-    app_context, errors = setup_bids_env(gear_context)
+    app_context, errors = setup_bids_env(
+        gear_context
+    )  # figure out how to mock the destination.get for testing.
     debug, config_options = parse_config(gear_context)
 
+
     # Section 2
-    command = generate_bids_command(app_context)
-
-    if config_options:
-        # Use customize_bids_command to modify the BIDS app command if there are
-        # specific ways that this BIDS app is called.
-        command = customize_bids_command(command)
-
-    # Section 3
-    if len(errors) > 0:
-        e_code = 1
-        log.info(
-            f"{app_context.bids_app_binary} was NOT run because of previous errors."
-        )
-
-    elif app_context.gear_dry_run:
+    if app_context.post_processing_only:
         e_code = 0
-        pretend_it_ran(app_context, command)
-        save_metadata(
-            gear_context,
-            app_context.analysis_output_dir / app_context.bids_app_binary,
-            app_context.bids_app_binary,
-            {"dry-run": "true"},
-        )
-        e = "gear-dry-run is set: Command was NOT run."
-        log.warning(e)
-        warnings.append(e)
-
-    else:
-        try:
-            # Pass the args, kwargs to fw_gear_qsiprep.main.run function to execute
-            # the main functionality of the gear.
-            e_code = run_bids_algo(app_context, command)
-
-        except RuntimeError as exc:
-            e_code = 1
-            errors.append(str(exc))
-            log.critical(exc)
-            log.exception("Unable to execute command.")
-
+        if destination.parent.type == "project":
+            # Unzipped, previous project results may have the
+            # dataset_description and BIDS dir buried one level.
+            check_bids_dir(app_context)
         else:
-            # We want to save the metadata only if the run was successful.
-            # We want to save partial outputs in the event of the app crashing, because
-            # the partial outputs can help pinpoint what the exact problem was. So we
-            # have `post_run` further down.
+            app_context.analysis_output_dir = app_context.bids_dir
+    else:
+        command = generate_bids_command(app_context)
+
+        if config_options:
+            # Use customize_bids_command to modify the BIDS app command if there are
+            # specific ways that this BIDS app is called.
+            command = customize_bids_command(command, config_options)
+
+        # Section 3
+        if len(errors) > 0:
+            e_code = 1
+            log.info(
+                f"{app_context.bids_app_binary} was NOT run because of previous errors."
+            )
+
+        elif app_context.gear_dry_run:
+            e_code = 0
+            pretend_it_ran(app_context, command)
             save_metadata(
                 gear_context,
                 app_context.analysis_output_dir / app_context.bids_app_binary,
                 app_context.bids_app_binary,
+                {"dry-run": "true"},
             )
+            e = "gear-dry-run is set: Command was NOT run."
+            log.warning(e)
 
-    # Section 4
-    # Clean up, move all results to the output directory.
-    # post_run should be run regardless of dry-run or exit code.
-    # It will be run even in the event of an error, so that the partial results are
-    # available for debugging.
-    package_output(
-        app_context,
-        gear_name=gear_context.manifest["name"],
-        errors=errors,
-        warnings=warnings,
-    )
+        else:
+            try:
+                # Pass the args, kwargs to fw_gear_qsiprep.main.run function to execute
+                # the main functionality of the gear.
 
-    log.info("%s Gear is done.  Returning %s", container, e_code)
+                # Start with running all participants, if at the group level
+                if destination.parent.type == "project":
+                    e_code = analyze_participants(app_context, command)
+                    # Due to the bug, specify the modalities to summarize
+                    # and pass the modified command to run_bids_algo
+                    log.warning(
+                        "MRIQC 23.1.0 has a bug #1128 in dwi group level processing.\n"
+                        "Please wait for the next official release to fix "
+                        "DWI summaries."
+                    )
+                    command.extend(["-m", "T1w T2w bold"])
 
-    # Exit the python script (and thus the container) with the exit
-    # code returned by fw_gear_bids_app_template.main.run function.
+                # Run either the 'participant' or 'group' version of the command
+                # as originally specified by the command.
+                # This will run the group summaries, if 'group', or the participant
+                # analysis, if 'participant'
+                e_code = run_bids_algo(app_context, command)
+
+            except RuntimeError as exc:
+                e_code = 1
+                errors.append(str(exc))
+                log.critical(exc)
+                log.exception("Unable to execute command.")
+
+    if e_code == 0:
+        # Section 4
+        # Clean up, move all results to the output directory.
+        # post_run should be run regardless of dry-run or exit code.
+        # It will be run even in the event of an error, so that the partial results are
+        # available for debugging.
+        extra_post_processing(gear_context, app_context)
+
+        package_output(
+            app_context,
+            gear_name=gear_context.manifest["name"],
+            errors=errors
+        )
+
+    log.info("%s Gear is done.  Returning %s", gear_name_and_version, e_code)
+
+    # Exit the python script (and thus the gear_name_and_version) with the exit
+    # code returned by fw_gear_bids_mriqc.main.run function.
     sys.exit(e_code)
-
-
-# pylint: enable=too-many-locals,too-many-statements
 
 
 # Only execute if file is run as main, not when imported by another module

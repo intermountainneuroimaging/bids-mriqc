@@ -24,8 +24,8 @@
       "type": "boolean"
     },
     "no-sub": {
-      "description": "Turn off submission of anonymized quality metrics to MRIQC’s metrics repository",
       "default": false,
+      "description": "Turn off submission of anonymized quality metrics to MRIQC’s metrics repository",
       "type": "boolean"
     }
   },
@@ -46,58 +46,58 @@
       "image": "flywheel/bids-mriqc:2.0.0_23.1.0"
     },
     "license": {
-          "main": {
-            "name": "MIT"
-          },
-          "dependencies": [
-            {
-              "name": "Other",
-              "url": "https://fsl.fmrib.ox.ac.uk/fsl/fslwiki/Licence"
-            },
-            {
-              "name": "Other",
-              "url": "https://github.com/ANTsX/ANTs/blob/v2.3.4/COPYING.txt"
-            },
-            {
-              "name": "Other",
-              "url": "https://surfer.nmr.mgh.harvard.edu/fswiki/License"
-            }
-          ],
-        "non-commercial-use-only": true
+      "dependencies": [
+        {
+          "name": "Other",
+          "url": "https://fsl.fmrib.ox.ac.uk/fsl/fslwiki/Licence"
+        },
+        {
+          "name": "Other",
+          "url": "https://github.com/ANTsX/ANTs/blob/v2.3.4/COPYING.txt"
+        },
+        {
+          "name": "Other",
+          "url": "https://surfer.nmr.mgh.harvard.edu/fswiki/License"
         }
+      ],
+      "main": {
+        "name": "MIT"
+      },
+      "non-commercial-use-only": true
+    }
   },
   "description": "MRIQC (23.1.0) extracts no-reference image quality metrics (IQMs) from T1w and T2w structural and functional magnetic resonance imaging data.  For more commandline options, please visit https://mriqc.readthedocs.io/en/latest/running.html. LICENSING NOTE: FSL software are owned by Oxford University Innovation and license is required for any commercial applications. For commercial licence please contact fsl@innovation.ox.ac.uk. For academic use, an academic license is required which is available by registering on the FSL website. Any use of the software requires that the user obtain the appropriate license. See https://fsl.fmrib.ox.ac.uk/fsldownloads_registration for more information.",
   "environment": {
-    "PATH":"/opt/conda/bin:/opt/ants:/opt/afni:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
-    "LANG":"en_US.UTF-8",
-    "LC_ALL":"en_US.UTF-8",
-    "CONDA_PATH":"/opt/conda",
-    "CPATH":"/opt/conda/include:",
-    "PYTHONNOUSERSITE":"1",
-    "LD_LIBRARY_PATH":"/usr/lib/x86_64-linux-gnu:/opt/conda/lib",
-    "AFNI_DIR":"/opt/afni",
-    "AFNI_IMSAVE_WARNINGS":"NO",
-    "AFNI_MODELPATH":"/opt/afni/models",
-    "AFNI_TTATLAS_DATASET":"/opt/afni/atlases",
-    "AFNI_PLUGINPATH":"/opt/afni/plugins",
-    "ANTSPATH":"/opt/ants",
+    "AFNI_DIR": "/opt/afni",
+    "AFNI_IMSAVE_WARNINGS": "NO",
+    "AFNI_MODELPATH": "/opt/afni/models",
+    "AFNI_PLUGINPATH": "/opt/afni/plugins",
+    "AFNI_TTATLAS_DATASET": "/opt/afni/atlases",
+    "ANTSPATH": "/opt/ants",
+    "CONDA_PATH": "/opt/conda",
+    "CPATH": "/opt/conda/include:",
+    "FLYWHEEL": "/flywheel/v0",
     "FREESURFER_HOME": "/opt/freesurfer",
-    "MKL_NUM_THREADS":"1",
-    "OMP_NUM_THREADS":"1",
-    "IS_DOCKER_8395080871":"1",
-    "HOME":"/home/mriqc",
-    "FLYWHEEL":"/flywheel/v0",
+    "HOME": "/home/mriqc",
+    "IS_DOCKER_8395080871": "1",
+    "LANG": "en_US.UTF-8",
+    "LC_ALL": "en_US.UTF-8",
+    "LD_LIBRARY_PATH": "/usr/lib/x86_64-linux-gnu:/opt/conda/lib",
+    "MKL_NUM_THREADS": "1",
+    "OMP_NUM_THREADS": "1",
+    "PATH": "/opt/conda/bin:/opt/ants:/opt/afni:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
+    "PYTHONNOUSERSITE": "1",
     "PYTHONUNBUFFERED": "1"
   },
   "inputs": {
+    "api-key": {
+      "base": "api-key",
+      "read-only": true
+    },
     "archived_runs": {
       "base": "file",
       "description": "Zip file with data or analyses from previous runs (e.g., FreeSurfer archive)",
       "optional": true
-    },
-     "api-key": {
-      "base": "api-key",
-      "read-only": true
     }
   },
   "label": "BIDS MRIQC: Automatic prediction of quality and visual reporting of MRI scans in BIDS format",

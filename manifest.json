@@ -25,7 +25,7 @@
     },
     "no-sub": {
       "default": false,
-      "description": "Turn off submission of anonymized quality metrics to MRIQC’s metrics repository",
+      "description": "Turn off submission of anonymized quality metrics to MRIQC's metrics repository",
       "type": "boolean"
     }
   },
@@ -39,7 +39,25 @@
       "perf"
     ],
     "flywheel": {
-      "suite": "BIDS Apps"
+      "suite": "Quality Assurance",
+      "classification": {
+        "species": [
+          "Human"
+        ],
+        "organ": [
+          "Brain"
+        ],
+        "therapeutic_area": [
+          "Psychiatry/Psychology",
+          "Neurology"
+        ],
+        "modality": [
+          "MR"
+        ],
+        "function": [
+          "Quality Assurance"
+        ]
+      }
     },
     "gear-builder": {
       "category": "analysis",
@@ -92,7 +110,7 @@
   "inputs": {
     "api-key": {
       "base": "api-key",
-      "read-only": true
+      "read-only": false
     },
     "archived_runs": {
       "base": "file",

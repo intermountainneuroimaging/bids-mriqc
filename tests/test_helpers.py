@@ -35,9 +35,10 @@ def test_find_group_tsvs(analysis_output_dir, flywheel_output_dir):
         tsv_file.touch()
 
     # Mock the log.info and log.debug functions
-    with patch("fw_gear_bids_mriqc.utils.helpers.log.info") as mock_info, patch(
-        "fw_gear_bids_mriqc.utils.helpers.log.debug"
-    ) as mock_debug:
+    with (
+        patch("fw_gear_bids_mriqc.utils.helpers.log.info") as mock_info,
+        patch("fw_gear_bids_mriqc.utils.helpers.log.debug") as mock_debug,
+    ):
         # Call the find_group_tsvs function
         find_group_tsvs(analysis_output_dir, flywheel_output_dir, destination_id="123")
 
@@ -53,9 +54,7 @@ def test_find_group_tsvs(analysis_output_dir, flywheel_output_dir):
 
         # Check that the log.info function is called with the
         # correct message
-        mock_info.assert_called_with(
-            f"Group-level tsv files:\n{list(flywheel_output_dir.glob('*tsv'))}"
-        )
+        mock_info.assert_called_with(f"Group-level tsv files:\n{list(flywheel_output_dir.glob('*tsv'))}")
 
         # Check that the log.debug function is not called
         mock_debug.assert_not_called()
@@ -63,9 +62,10 @@ def test_find_group_tsvs(analysis_output_dir, flywheel_output_dir):
 
 def test_find_group_tsvs_no_tsv_files(analysis_output_dir, flywheel_output_dir):
     # Mock the log.info and log.debug functions
-    with patch("fw_gear_bids_mriqc.utils.helpers.log.info") as mock_info, patch(
-        "fw_gear_bids_mriqc.utils.helpers.log.debug"
-    ) as mock_debug:
+    with (
+        patch("fw_gear_bids_mriqc.utils.helpers.log.info") as mock_info,
+        patch("fw_gear_bids_mriqc.utils.helpers.log.debug") as mock_debug,
+    ):
         # Call the find_group_tsvs function when there are
         # no tsv files in the analysis output directory
         find_group_tsvs(analysis_output_dir, flywheel_output_dir, destination_id="123")
@@ -73,17 +73,14 @@ def test_find_group_tsvs_no_tsv_files(analysis_output_dir, flywheel_output_dir):
         # Check that the log.debug function is called with the
         # correct message
         mock_debug.assert_called_with(
-            f"Do you spot tsv files here?\n"
-            f"{determine_dir_structure(flywheel_output_dir)}"
+            f"Do you spot tsv files here?\n" f"{determine_dir_structure(flywheel_output_dir)}"
         )
 
         # Check that the log.info function is not called
         mock_info.assert_not_called()
 
 
-@pytest.mark.parametrize(
-    "analysis_level, expected_calls", [("group", 1), ("subject", 0)]
-)
+@pytest.mark.parametrize("analysis_level, expected_calls", [("group", 1), ("subject", 0)])
 @patch("fw_gear_bids_mriqc.utils.helpers.store_metadata")
 @patch("fw_gear_bids_mriqc.utils.helpers.find_group_tsvs")
 def test_extra_post_processing(

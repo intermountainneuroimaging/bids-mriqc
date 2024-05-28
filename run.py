@@ -1,7 +1,10 @@
 #!/usr/bin/env python
 """The run script."""
+
 import logging
 import sys
+
+from flywheel_bids.flywheel_bids_app_toolkit import BIDSAppContext
 
 # This design with the main interfaces separated from a gear module (with main and
 # parser) allows the gear module to be publishable, so it can then be imported in
@@ -16,9 +19,9 @@ from flywheel_bids.flywheel_bids_app_toolkit.utils.helpers import check_bids_dir
 from flywheel_gear_toolkit import GearToolkitContext
 
 from fw_gear_bids_mriqc.main import customize_bids_command, setup_bids_env
-from fw_gear_bids_mriqc.parser import parse_config
+from fw_gear_bids_mriqc.parser import parse_config, parse_input_files
 from fw_gear_bids_mriqc.utils.dry_run import pretend_it_ran
-from fw_gear_bids_mriqc.utils.helpers import analyze_participants, extra_post_processing
+from fw_gear_bids_mriqc.utils.helpers import analyze_participants, extra_post_processing, validate_setup
 
 log = logging.getLogger(__name__)
 
@@ -46,18 +49,35 @@ def main(gear_context: GearToolkitContext) -> None:
     spin down gracefully and provide the analysis for review and future use.
     """
 
-    # Section 1
-    # Collect FW-specific information
-    destination, _, gear_name_and_version = get_fw_details(gear_context)
+    # BIDSAppContext parses the config and populates the BIDS_app_context
+    # with bids_app_context, directories, and performance settings.
+    # While mirroring GTK context, this object is specifically for
+    # BIDS apps and contains the building blocks for command execution.
+    app_context = BIDSAppContext(gear_context)
+
+    validate_setup(gear_context, app_context)
+
+    # Section 1: Set up
+    # Collect information related specifically to Flywheel
+    destination, gear_builder_info, gear_name_and_version = get_fw_details(gear_context)
 
     # Setup FreeSurfer, BIDSAppContext, and download BIDS data
-    app_context, errors = setup_bids_env(
-        gear_context
-    )  # figure out how to mock the destination.get for testing.
+    errors = setup_bids_env(gear_context, app_context)
     debug, config_options = parse_config(gear_context)
+    # If archived runs or other configuration files are allowed in the input tab of
+    # the UI, consider using the following method to make the filepaths available to
+    # match with kwargs in the bids_app_command
+    input_files = parse_input_files(gear_context, app_context)
 
+    if input_files and config_options:
+        # Replace any of the common keys with the Flywheel filepaths from
+        # get_input_path() (from `parser.parse_input_files`)
+        config_options.update(input_files)
+    elif input_files:
+        # Use all the magic of `build_command_list` on the input file entries anyway
+        config_options = input_files
 
-    # Section 2
+    # Section 2: Parse command line
     if app_context.post_processing_only:
         e_code = 0
         if destination.parent.type == "project":
@@ -77,9 +97,7 @@ def main(gear_context: GearToolkitContext) -> None:
         # Section 3
         if len(errors) > 0:
             e_code = 1
-            log.info(
-                f"{app_context.bids_app_binary} was NOT run because of previous errors."
-            )
+            log.info(f"{app_context.bids_app_binary} was NOT run because of previous errors.")
 
         elif app_context.gear_dry_run:
             e_code = 0
@@ -130,11 +148,7 @@ def main(gear_context: GearToolkitContext) -> None:
         # available for debugging.
         extra_post_processing(gear_context, app_context)
 
-        package_output(
-            app_context,
-            gear_name=gear_context.manifest["name"],
-            errors=errors
-        )
+        package_output(app_context, gear_name=gear_context.manifest["name"], errors=errors)
 
     log.info("%s Gear is done.  Returning %s", gear_name_and_version, e_code)
 

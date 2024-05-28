@@ -33,9 +33,7 @@ def filter_fw_files(bids_name, acqs: list):
                     return acq, f
 
 
-def store_iqms(
-    gear_context: GearToolkitContext, bids_app_context: BIDSAppContext
-) -> dict:
+def store_iqms(gear_context: GearToolkitContext, bids_app_context: BIDSAppContext) -> dict:
     """MRIQC calculates 56 anatomical features and numerous functional
     features to characterize quality. These features are called Image
     Quality Metrics (IQMs).
@@ -60,17 +58,14 @@ def store_iqms(
 
             bids_acquisitions = find_associated_bids_acqs(gear_context)
             try:
-                fw_parent, fw_file = filter_fw_files(
-                    Path(json_file).stem, bids_acquisitions
-                )
+                fw_parent, fw_file = filter_fw_files(Path(json_file).stem, bids_acquisitions)
                 if fw_file:
                     _update_fw_file(fw_file, json_data)
                 else:
                     _add_metadata_to_upload(metadata_to_upload, json_file, json_data)
             except TypeError:
                 log.info(
-                    f"find_fw_file did not return any matching, "
-                    f"analyzed acquisitions for {Path(json_file).stem}"
+                    f"find_fw_file did not return any matching, " f"analyzed acquisitions for {Path(json_file).stem}"
                 )
 
     if metadata_to_upload:
@@ -125,8 +120,7 @@ def _find_output_files(analysis_output_dir, ext):
         files = [
             f
             for f in Path(analysis_output_dir).rglob("**/*" + ext)
-            if not op.basename(f).startswith("._")
-            and not op.basename(f).startswith("dataset")
+            if not op.basename(f).startswith("._") and not op.basename(f).startswith("dataset")
         ]
         if len(files) > 0:  # Throw exception if empty list
             list_of_files = "\n  ".join([str(f) for f in files])
@@ -152,7 +146,7 @@ def _parse_json_file(json_file: str) -> dict:
 
 def _update_fw_file(fw_file: flywheel.FileEntry, json_data: dict):
     """Add the metadata to the system"""
-    fw_file.update_info({"derived":{"IQM": _create_nested_metadata(json_data)}})
+    fw_file.update_info({"derived": {"IQM": _create_nested_metadata(json_data)}})
     log.info(f"Updated {fw_file.name}")
 
 

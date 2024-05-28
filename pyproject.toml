@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "fw-gear-bids-mriqc"
-version = "2.0.0"
+version = "2.1.0+23.1.0"
 description = "Flywheel BIDS MRIQC"
 authors = ["Flywheel <support@flywheel.io>"]
 readme = "README.md"
@@ -20,9 +20,10 @@ packages = [
 
 [tool.poetry.dependencies]
 python = "^3.9"
-flywheel-gear-toolkit = {git = "https://gitlab.com/flywheel-io/public/gear-toolkit.git", rev= "a08d65a66c3b76593e96fc83f53ac998d7a5abf1"}
-flywheel-bids = {git = "https://gitlab.com/flywheel-io/public/bids-client.git", rev="fda4f4503f4c7507bdbb4a8686deb4d1c0bf217a"}
+flywheel-gear-toolkit = "^0.6"
+flywheel-bids = {git = "https://gitlab.com/flywheel-io/public/bids-client.git", branch = "master", develop = false}
 jsonschema="^4.0"
+pyzmq="<26.0.0" # Broken builds 26.0.1 & 26.0.2
 
 [tool.poetry.dev-dependencies]
 psutil = "^5.9.0"

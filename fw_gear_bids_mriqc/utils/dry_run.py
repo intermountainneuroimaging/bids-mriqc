@@ -31,12 +31,7 @@ def pretend_it_ran(app_context: BIDSAppContext, command: List[str]) -> None:
 
     files = [
         path / "somedir" / "d3.js",
-        path
-        / "reportlets"
-        / "somecmd"
-        / "sub-TOME3024"
-        / "anat"
-        / "sub-TOME3024_desc-about_T1w.html",
+        path / "reportlets" / "somecmd" / "sub-TOME3024" / "anat" / "sub-TOME3024_desc-about_T1w.html",
     ]
 
     make_dirs_and_files(files)
@@ -48,11 +43,7 @@ def pretend_it_ran(app_context: BIDSAppContext, command: List[str]) -> None:
 
     files = [
         path / "somedir" / "logs" / "CITATION.md",
-        path
-        / "somedir"
-        / "sub-TOME3024"
-        / "anat"
-        / "sub-TOME3024_acq-MPR_from-orig_to-T1w_mode-image_xfm.txt",
+        path / "somedir" / "sub-TOME3024" / "anat" / "sub-TOME3024_acq-MPR_from-orig_to-T1w_mode-image_xfm.txt",
         path / "freesurfer" / "fsaverage" / "mri" / "subcort.prob.log",
     ]
 

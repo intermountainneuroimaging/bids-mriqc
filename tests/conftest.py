@@ -30,9 +30,7 @@ def extended_gear_context(mock_context, tmp_path):
     lambda function at the test level will allow us to combine this test fixture
     with parametrize and change various values on the fly.
     """
-    mock_context.client.return_value.get.side_effect = lambda key: {
-        "destination": "aex"
-    }.get(key)
+    mock_context.client.return_value.get.side_effect = lambda key: {"destination": "aex"}.get(key)
     mock_context.output_dir = Path(tmp_path) / Path("output_dir")
     mock_context.work_dir = Path(tmp_path) / Path("work_dir")
     mock_context.destination = {
@@ -40,17 +38,14 @@ def extended_gear_context(mock_context, tmp_path):
         "parent": {"type": "project"},
     }
     mock_context.config.get.side_effect_dict = {
-        "bids_app_command": "something_bids_related /path/1 "
-        "/path/2 participant --extra_option extra_opt",
+        "bids_app_command": "something_bids_related /path/1 " "/path/2 participant --extra_option extra_opt",
         "app-dry-run": True,
         "gear-save-intermediate-output": True,
         "gear-dry-run": False,
         "gear-keep-output": False,
         "random_extra_ui_key": None,
     }
-    mock_context.config.get.side_effect = lambda key: mock_context.config.get.side_effect_dict.get(
-        key, None
-    )
+    mock_context.config.get.side_effect = lambda key: mock_context.config.get.side_effect_dict.get(key, None)
     mock_context.get_input.side_effect = lambda key: {
         "api_key": "fake_key",
         "random_extra_ui_key": None,
@@ -58,7 +53,7 @@ def extended_gear_context(mock_context, tmp_path):
     mock_context.manifest.get.side_effect = lambda key: {
         "custom": {
             "bids-app-binary": "something_bids_related",
-            "bids-app-modalities": ["modality1", "modality2"],
+            "bids-app-data-types": ["modality1", "modality2"],
         }
     }.get(key)
 

@@ -18,6 +18,31 @@
       "description": "Do everything Flywheel-related except actually execute BIDS App command. Different from passing '--dry-run' in the BIDS App command.",
       "type": "boolean"
     },
+    "gear-FREESURFER_LICENSE": {
+      "default": "",
+      "description": "Text from license file generated during FreeSurfer registration. *Entries should be space separated*",
+      "type": "string"
+    },
+    "gear-intermediate-files": {
+      "default": "",
+      "description": "Space separated list of FILES to retain from the intermediate work directory.",
+      "type": "string"
+    },
+    "gear-intermediate-folders": {
+      "default": "",
+      "description": "Space separated list of FOLDERS to retain from the intermediate work directory.",
+      "type": "string"
+    },
+    "gear-expose-all-outputs": {
+      "default": false,
+      "description": "Keep ALL the extra output files that are created during the run in addition to the normal, zipped output. Note: This option may cause a gear failure because there are too many files for the engine.",
+      "type": "boolean"
+    },
+    "gear-save-intermediate-output": {
+      "default": false,
+      "description": "Gear will save ALL intermediate output into {{bids_app_binary}}_work.zip",
+      "type": "boolean"
+    },
     "gear-post-processing-only": {
       "default": false,
       "description": "REQUIRES archive file. Gear will skip the BIDS algorithm and go straight to generating the HTML reports and processing metadata.",
@@ -32,7 +57,7 @@
   "custom": {
     "analysis-level": "participant",
     "bids-app-binary": "mriqc",
-    "bids-app-modalities": [
+    "bids-app-data-types": [
       "anat",
       "func",
       "dwi",
@@ -40,6 +65,7 @@
     ],
     "flywheel": {
       "suite": "Quality Assurance",
+      "show-job": true,
       "classification": {
         "species": [
           "Human"
@@ -61,7 +87,7 @@
     },
     "gear-builder": {
       "category": "analysis",
-      "image": "flywheel/bids-mriqc:2.0.0_23.1.0"
+      "image": "flywheel/bids-mriqc:2.1.0_23.1.0"
     },
     "license": {
       "dependencies": [
@@ -103,9 +129,10 @@
     "LD_LIBRARY_PATH": "/usr/lib/x86_64-linux-gnu:/opt/conda/lib",
     "MKL_NUM_THREADS": "1",
     "OMP_NUM_THREADS": "1",
-    "PATH": "/opt/conda/bin:/opt/ants:/opt/afni:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
+    "PATH": "/opt/ants:/opt/afni:/opt/conda/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
     "PYTHONNOUSERSITE": "1",
-    "PYTHONUNBUFFERED": "1"
+    "PYTHONUNBUFFERED": "1",
+    "PWD": "/flywheel/v0"
   },
   "inputs": {
     "api-key": {
@@ -124,5 +151,5 @@
   "name": "bids-mriqc",
   "source": "https://github.com/nipreps/mriqc/tree/master",
   "url": "https://gitlab.com/flywheel-io/scientific-solutions/gears/bids-apps/bids-mriqc",
-  "version": "2.0.0_23.1.0"
+  "version": "2.1.0_23.1.0"
 }

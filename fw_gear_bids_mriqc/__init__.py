@@ -1,4 +1,5 @@
 """The fw_gear_{{gear_package}} package."""
+
 from importlib.metadata import version
 
 try:

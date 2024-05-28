@@ -1,4 +1,5 @@
 """Module to test parser.py"""
+
 import pytest
 
 from fw_gear_bids_mriqc.parser import parse_config
@@ -17,9 +18,7 @@ from fw_gear_bids_mriqc.parser import parse_config
         ),
     ],
 )
-def test_parse_config(
-    mock_config_dict, expected_debug, expected_config_options, mock_context
-):
+def test_parse_config(mock_config_dict, expected_debug, expected_config_options, mock_context):
     mock_context.config.items.side_effect = [mock_config_dict.items()]
     mock_context.config.get.side_effect = lambda key: mock_config_dict.get(key)
     debug, config_options = parse_config(mock_context)

@@ -66,9 +66,7 @@ def mock_sess(n_ses, mock_context, n_acqs=3):
 class TestStoreIQMs:
     @patch("fw_gear_bids_mriqc.utils.store_iqms.find_associated_bids_acqs")
     @patch("fw_gear_bids_mriqc.utils.store_iqms._create_nested_metadata")
-    def test_store_iqms_needs_jsons(
-        self, mock_nested, mock_find_bids, mock_context, mock_app_context, caplog
-    ):
+    def test_store_iqms_needs_jsons(self, mock_nested, mock_find_bids, mock_context, mock_app_context, caplog):
         """
         Make sure the store_iqms fails if no jsons are located.
             Args:
@@ -85,9 +83,7 @@ class TestStoreIQMs:
         assert "Did not find MRIQC output" in caplog.records[1].message
         assert mock_nested.call_count == 0
 
-    def test_create_nested_metadata_parses(
-        self, analysis_to_parse={"a": {"b": {"c": ["d", "e"]}}}
-    ):
+    def test_create_nested_metadata_parses(self, analysis_to_parse={"a": {"b": {"c": ["d", "e"]}}}):
         """
         Does _create_nested_metadata_parse a nested dict correctly?
         Since the incoming data in the real method is given by json.load,
@@ -174,9 +170,7 @@ def test_update_fw_file():
 
 
 def test_add_metadata_to_upload():
-    metadata_to_upload = defaultdict(
-        lambda: defaultdict(lambda: defaultdict(lambda: defaultdict(list)))
-    )
+    metadata_to_upload = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: defaultdict(list))))
     json_file = "test.json"
     json_data = {"feature1": 1, "feature2": 2}
 

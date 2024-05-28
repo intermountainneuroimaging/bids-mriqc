@@ -6,13 +6,10 @@ from pathlib import Path
 from typing import List, Union
 
 from flywheel_bids.flywheel_bids_app_toolkit import BIDSAppContext
-from flywheel_bids.flywheel_bids_app_toolkit.commands import (
-    run_bids_algo,
-)
+from flywheel_bids.flywheel_bids_app_toolkit.commands import run_bids_algo, validate_kwargs
 from flywheel_bids.flywheel_bids_app_toolkit.utils.helpers import (
     determine_dir_structure,
 )
-
 from fw_gear_bids_mriqc.utils.store_iqms import store_iqms
 
 log = logging.getLogger(__name__)
@@ -39,19 +36,12 @@ def find_group_tsvs(
     tsvs = list(Path(analysis_output_dir).glob("*tsv"))
     for tsv in tsvs:
         name_no_tsv = Path(tsv).stem
-        dest_tsv = Path(flywheel_output_dir).joinpath(
-            name_no_tsv + "_" + destination_id + ".tsv"
-        )
+        dest_tsv = Path(flywheel_output_dir).joinpath(name_no_tsv + "_" + destination_id + ".tsv")
         Path(tsv).rename(dest_tsv)
     if list(Path(flywheel_output_dir).glob("*tsv")):
-        log.info(
-            f"Group-level tsv files:\n{list(Path(flywheel_output_dir).glob('*tsv'))}"
-        )
+        log.info(f"Group-level tsv files:\n{list(Path(flywheel_output_dir).glob('*tsv'))}")
     else:
-        log.debug(
-            f"Do you spot tsv files here?\n"
-            f"{determine_dir_structure(flywheel_output_dir)}"
-        )
+        log.debug(f"Do you spot tsv files here?\n" f"{determine_dir_structure(flywheel_output_dir)}")
 
 
 def analyze_participants(app_context: BIDSAppContext, command: List) -> int:
@@ -84,15 +74,7 @@ def analyze_participants(app_context: BIDSAppContext, command: List) -> int:
 def store_metadata(gear_context, app_context):
     if app_context.gear_dry_run:
         log.info("Just dry run: no additional data.\n" "Skipping store_iqms method.")
-        return {
-            "analysis": {
-                "info": {
-                    "derived": {
-                        "dry_run": {"How dry I am": "Say to Mister Temperance...."}
-                    }
-                }
-            }
-        }
+        return {"analysis": {"info": {"derived": {"dry_run": {"How dry I am": "Say to Mister Temperance...."}}}}}
     else:
         try:
             return store_iqms(gear_context, app_context)
@@ -114,3 +96,19 @@ def extra_post_processing(gear_context, app_context) -> None:
         )
 
     store_metadata(gear_context, app_context)
+
+
+def validate_setup(gear_context, app_context):
+    """Customizable validation pipeline for gear-dependent configuration options.
+
+    The goal is to cause the gear to fail quickly and with useful debugging help
+    prior to downloading BIDS data or running (doomed) BIDS algorithms.
+
+    Validating the bids_app_options kwargs should be included for all BIDS App gears.
+    Other items to consider for validation include:
+    1) Do any input files require other input files?
+    2) Do other modification scripts/methods need to be run on inputs?
+    3) Are any config settings mutually exclusive and need to be double-checked?
+    """
+    if app_context.bids_app_options:
+        validate_kwargs(app_context)

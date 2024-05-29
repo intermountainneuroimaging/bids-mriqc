@@ -13,15 +13,20 @@
       "description": "Log debug messages",
       "type": "boolean"
     },
+    "gear-FREESURFER_LICENSE": {
+      "default": "",
+      "description": "Text from license file generated during FreeSurfer registration. *Entries should be space separated*",
+      "type": "string"
+    },
     "gear-dry-run": {
       "default": false,
       "description": "Do everything Flywheel-related except actually execute BIDS App command. Different from passing '--dry-run' in the BIDS App command.",
       "type": "boolean"
     },
-    "gear-FREESURFER_LICENSE": {
-      "default": "",
-      "description": "Text from license file generated during FreeSurfer registration. *Entries should be space separated*",
-      "type": "string"
+    "gear-expose-all-outputs": {
+      "default": false,
+      "description": "Keep ALL the extra output files that are created during the run in addition to the normal, zipped output. Note: This option may cause a gear failure because there are too many files for the engine.",
+      "type": "boolean"
     },
     "gear-intermediate-files": {
       "default": "",
@@ -33,19 +38,14 @@
       "description": "Space separated list of FOLDERS to retain from the intermediate work directory.",
       "type": "string"
     },
-    "gear-expose-all-outputs": {
+    "gear-post-processing-only": {
       "default": false,
-      "description": "Keep ALL the extra output files that are created during the run in addition to the normal, zipped output. Note: This option may cause a gear failure because there are too many files for the engine.",
+      "description": "REQUIRES archive file. Gear will skip the BIDS algorithm and go straight to generating the HTML reports and processing metadata.",
       "type": "boolean"
     },
     "gear-save-intermediate-output": {
       "default": false,
       "description": "Gear will save ALL intermediate output into {{bids_app_binary}}_work.zip",
-      "type": "boolean"
-    },
-    "gear-post-processing-only": {
-      "default": false,
-      "description": "REQUIRES archive file. Gear will skip the BIDS algorithm and go straight to generating the HTML reports and processing metadata.",
       "type": "boolean"
     },
     "no-sub": {
@@ -64,26 +64,26 @@
       "perf"
     ],
     "flywheel": {
-      "suite": "Quality Assurance",
-      "show-job": true,
       "classification": {
-        "species": [
-          "Human"
-        ],
-        "organ": [
-          "Brain"
-        ],
-        "therapeutic_area": [
-          "Psychiatry/Psychology",
-          "Neurology"
+        "function": [
+          "Quality Assurance"
         ],
         "modality": [
           "MR"
         ],
-        "function": [
-          "Quality Assurance"
+        "organ": [
+          "Brain"
+        ],
+        "species": [
+          "Human"
+        ],
+        "therapeutic_area": [
+          "Psychiatry/Psychology",
+          "Neurology"
         ]
-      }
+      },
+      "show-job": true,
+      "suite": "Quality Assurance"
     },
     "gear-builder": {
       "category": "analysis",
@@ -130,9 +130,9 @@
     "MKL_NUM_THREADS": "1",
     "OMP_NUM_THREADS": "1",
     "PATH": "/opt/ants:/opt/afni:/opt/conda/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
+    "PWD": "/flywheel/v0",
     "PYTHONNOUSERSITE": "1",
-    "PYTHONUNBUFFERED": "1",
-    "PWD": "/flywheel/v0"
+    "PYTHONUNBUFFERED": "1"
   },
   "inputs": {
     "api-key": {

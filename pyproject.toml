@@ -21,7 +21,7 @@ packages = [
 [tool.poetry.dependencies]
 python = "^3.9"
 flywheel-gear-toolkit = "^0.6"
-flywheel-bids = {git = "https://gitlab.com/flywheel-io/public/bids-client.git", branch = "master", develop = false}
+flywheel-bids = {git = "https://gitlab.com/flywheel-io/public/bids-client.git", tag="1.2.14"}
 jsonschema="^4.0"
 pyzmq="<26.0.0" # Broken builds 26.0.1 & 26.0.2
 

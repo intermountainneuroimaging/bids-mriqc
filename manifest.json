@@ -87,7 +87,7 @@
     },
     "gear-builder": {
       "category": "analysis",
-      "image": "flywheel/bids-mriqc:2.1.0_23.1.0"
+      "image": "flywheel/bids-mriqc:2.1.1_23.1.0"
     },
     "license": {
       "dependencies": [
@@ -151,5 +151,5 @@
   "name": "bids-mriqc",
   "source": "https://github.com/nipreps/mriqc/tree/master",
   "url": "https://gitlab.com/flywheel-io/scientific-solutions/gears/bids-apps/bids-mriqc",
-  "version": "2.1.0_23.1.0"
+  "version": "2.1.1_23.1.0"
 }

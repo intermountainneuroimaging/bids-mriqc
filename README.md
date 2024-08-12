@@ -3,6 +3,17 @@
 BIDS MRIQC: Automatic prediction of quality and visual reporting of MRI scans in BIDS
 format
 
+# Update the BIDS algorithm version
+1. Fork the repo.
+2. [Update the DockerHub image](https://gitlab.com/flywheel-io/scientific-solutions/gears/bids-apps/bids-mriqc/-/blob/main/Dockerfile?ref_type=heads#L52) that the gear will use.
+3. Update the [gear-builder line](https://gitlab.com/flywheel-io/scientific-solutions/gears/bids-apps/bids-mriqc/-/blob/main/manifest.json?ref_type=heads#L90) in the manifest.
+4. Update the [version line](https://gitlab.com/flywheel-io/scientific-solutions/gears/bids-apps/bids-mriqc/-/blob/main/manifest.json?ref_type=heads#L154) in the manifest.
+5. Run `poetry update` from the local commandline (where your cwd is the top-level of the gear). This command will update any dependencies for the Flywheel portion of the gear (not the BIDS algorithm itself!).
+6. Run `fw-beta gear build` to update anything in the manifest.
+7. Ideally, run `fw-beta gear upload` and complete a test run on your Flywheel instance.
+8. Run `git checkout -b {my-update}`, `git commit -a -m "{My message about updating}" -n`, and `git push`.
+9.  Submit a merge request (MR) to the original gear repo for Flywheel staff to review for official inclusion in the exchange.
+
 ## Overview
 
 *{Link To Usage}*

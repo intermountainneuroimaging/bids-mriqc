@@ -21,9 +21,10 @@ packages = [
 [tool.poetry.dependencies]
 python = "^3.9"
 flywheel-gear-toolkit = "^0.6"
-flywheel-bids = {git = "https://gitlab.com/flywheel-io/public/bids-client.git", tag="1.2.14"}
+flywheel-bids = "1.2.17"
 jsonschema="^4.0"
 pyzmq="<26.0.0" # Broken builds 26.0.1 & 26.0.2
+#setuptools = "^71"
 
 [tool.poetry.dev-dependencies]
 psutil = "^5.9.0"
@@ -31,8 +32,17 @@ pytest = "^6.1.2"
 pytest-cov = "^3.0.0"
 pytest-mock = "^3.8.2"
 jupyter = "^1.0.0"
+packaging = ">=24"
+ordered-set = ">=3.1.1"
+more_itertools = ">=8.8"
+importlib_resources = ">=5.10.2"
+importlib_metadata = ">=6"
+tomli = ">=2.0.1"
+wheel = ">=0.43.0"
+platformdirs = ">= 2.6.2"
 
 [tool.ruff]
+lint.ignore-init-module-imports = true
 ignore = ["D", "E722", "F401", "F841", "PLR0915"]
 # Allow fix for all enabled rules (when `--fix`) is provided.
 fixable = ["ALL"]
@@ -70,5 +80,5 @@ dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
 target-version = "py39"
 
 [build-system]
-requires = ["poetry-core>=1.0.8"]
+requires = ["poetry>=0.12"]
 build-backend = "poetry.core.masonry.api"

@@ -37,11 +37,11 @@ ENV PATH="/opt/flypy/bin:$PATH"
 COPY requirements.txt $FLYWHEEL/
 
 # Verified with `which pip` that pip is /opt/flypy/bin/pip
-RUN pip install -U pip
+RUN pip install --no-cache-dir -U pip
 RUN pip install --no-cache-dir -r $FLYWHEEL/requirements.txt
 
 COPY ./ $FLYWHEEL/
-RUN pip install .
+RUN pip install --no-cache-dir .
 
 # Isolate the versions of the dependencies within the BIDS App
 # from the (potentially updated) Flywheel dependencies by copying
@@ -49,13 +49,14 @@ RUN pip install .
 
 # The template BIDS app repo is used for the testing example here.
 ### 23.1.0 runs python 3.9.12
-FROM nipreps/mriqc:23.1.0 as bids_runner
+FROM nipreps/mriqc:24.0.0 as bids_runner
 ENV FLYWHEEL="/flywheel/v0"
 WORKDIR ${FLYWHEEL}
 
+COPY --from=fw_base /usr/local /usr/local
 COPY --from=fw_base /opt/flypy /opt/flypy
-# Update the softlink to point to Python 3.9 in bids_runner
-RUN ln -sf /opt/conda/bin/python /opt/flypy/bin/python
+# Update the softlink to point to fw_base's version of python in bids_runner
+RUN ln -sf /usr/local/bin/python3.9 /opt/flypy/bin/python
 
 # Installing the current project (most likely to change, above layer can be cached)
 COPY ./ $FLYWHEEL/

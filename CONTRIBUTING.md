@@ -34,8 +34,8 @@ Dependencies are listed in the `pyproject.toml` file.
 * Adding: Use `poetry add [--dev] <dep>`
 * Removing: Use `poetry remove [--dev] <dep>`
 * Updating: Use `poetry update <dep>` or `poetry update` to update all deps.
-    * Can also not update development dependencies with `--no-dev`
-    * Update dry run: `--gear-dry-run`
+  * Can also not update development dependencies with `--no-dev`
+  * Update dry run: `--gear-dry-run`
 
 #### Using a different version of python
 
@@ -80,8 +80,8 @@ More hooks can be enabled upon need. List of available
 ### pre-commit usage
 
 * Run hooks manually:
-    * Run on all files: `pre-commit run -a`
-    * Run on certain files: `pre-commit run --files test/*`
+  * Run on all files: `pre-commit run -a`
+  * Run on certain files: `pre-commit run --files test/*`
 * Update (e.g. clean and install) hooks: `pre-commit clean && pre-commit install`
 * Disable all hooks: `pre-commit uninstall`
 * Enable all hooks: `pre-commit install`
@@ -110,7 +110,7 @@ The gear generally progresses from one section to the next as defined below:
 
 * Section 1: Set up the Docker container with all the env variables, licenses, and BIDS
   data.
-    * Configuration options are parsed and stored in the BIDS App Context object.
+  * Configuration options are parsed and stored in the BIDS App Context object.
       Various parameters needed by the algorithm can be and are populated from there.
 
 * Section 2: Parse the commandline input provided via the config.json under the "
@@ -124,12 +124,12 @@ The gear generally progresses from one section to the next as defined below:
 
 * Section 3: Handle dry-runs, BIDS download (not validation) errors, and actual
   algorithm runs.
-    * After parsing the configuration and ensuring that the algorithm command has been
+  * After parsing the configuration and ensuring that the algorithm command has been
       cleaned for illegal characters, the MRIQC algorithm will run.
 
 * Section 4: Zip any html, result, or other files so the container can spin down
   gracefully and provide the analysis for review and alternatives use.
-    * Output from the algorithm is collected and parsed to populate metadata and report
+  * Output from the algorithm is collected and parsed to populate metadata and report
       in the analyses tab. HTML reports from MRIQC can be downloaded individually or in
       the overall bids_mriqc zip folder.
 

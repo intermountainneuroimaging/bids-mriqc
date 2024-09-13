@@ -1,6 +1,4 @@
-# Keep the python at 3.9-slim to integrate well with
-# the mriqc image.
-FROM python:3.9-slim as fw_base
+FROM flywheel/python:3.12-debian as fw_base
 ENV FLYWHEEL="/flywheel/v0"
 WORKDIR ${FLYWHEEL}
 
@@ -9,13 +7,15 @@ RUN apt-get update && \
     apt-get upgrade -y && \
     apt-get clean
 RUN apt-get install --no-install-recommends -y \
-   git \
-   build-essential \
-   zip \
-   nodejs \
-   tree && \
-   apt-get clean && \
-   rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+    git \
+    build-essential \
+    zip \
+    nodejs \
+    tree
+RUN apt-get upgrade -y \
+    linux-libc-dev && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 ## Install reprozip
 #RUN apt-get update && \
@@ -48,15 +48,14 @@ RUN pip install --no-cache-dir .
 # the venv with the pip installed Flyhweel deps.
 
 # The template BIDS app repo is used for the testing example here.
-### 23.1.0 runs python 3.9.12
-FROM nipreps/mriqc:24.0.0 as bids_runner
+FROM nipreps/mriqc:24.0.2
 ENV FLYWHEEL="/flywheel/v0"
 WORKDIR ${FLYWHEEL}
 
 COPY --from=fw_base /usr/local /usr/local
 COPY --from=fw_base /opt/flypy /opt/flypy
 # Update the softlink to point to fw_base's version of python in bids_runner
-RUN ln -sf /usr/local/bin/python3.9 /opt/flypy/bin/python
+RUN ln -sf /usr/local/bin/python3.12 /opt/flypy/bin/python
 
 # Installing the current project (most likely to change, above layer can be cached)
 COPY ./ $FLYWHEEL/

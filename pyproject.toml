@@ -21,16 +21,14 @@ packages = [
 [tool.poetry.dependencies]
 python = "^3.9"
 flywheel-gear-toolkit = "^0.6"
-flywheel-bids = "1.2.17"
+flywheel-bids = {git = "https://gitlab.com/flywheel-io/public/bids-client.git", branch = "master", develop=false}
 jsonschema="^4.0"
-pyzmq="<26.0.0" # Broken builds 26.0.1 & 26.0.2
-#setuptools = "^71"
 
 [tool.poetry.dev-dependencies]
 psutil = "^5.9.0"
-pytest = "^6.1.2"
-pytest-cov = "^3.0.0"
-pytest-mock = "^3.8.2"
+pytest = "^7.0"
+pytest-cov = "^4.0"
+pytest-mock = "^3.11"
 jupyter = "^1.0.0"
 packaging = ">=24"
 ordered-set = ">=3.1.1"
@@ -43,10 +41,10 @@ platformdirs = ">= 2.6.2"
 
 [tool.ruff]
 lint.ignore-init-module-imports = true
-ignore = ["D", "E722", "F401", "F841", "PLR0915"]
+lint.ignore = ["D", "E722", "F401", "F841", "PLR0915"]
 # Allow fix for all enabled rules (when `--fix`) is provided.
-fixable = ["ALL"]
-unfixable = []
+lint.fixable = ["ALL"]
+lint.unfixable = []
 # Exclude a variety of commonly ignored directories.
 exclude = [
     ".bzr",
@@ -76,7 +74,7 @@ exclude = [
 # Same as Black
 line-length = 120
 # Allow unused variables when underscore-prefixed.
-dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
+lint.dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
 target-version = "py39"
 
 [build-system]

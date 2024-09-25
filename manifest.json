@@ -127,16 +127,16 @@
     "LANG": "en_US.UTF-8",
     "LC_ALL": "en_US.UTF-8",
     "LD_LIBRARY_PATH": "/opt/conda/lib:/usr/lib/x86_64-linux-gnu:/lib",
+    "MAMBA_ROOT_PREFIX": "/opt/conda",
     "MKL_NUM_THREADS": "1",
+    "NUMEXPR_MAX_THREADS": "1",
     "OMP_NUM_THREADS": "1",
     "PATH": "/opt/conda/bin:/opt/afni:/opt/conda/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
     "PWD": "/flywheel/v0",
     "PYTHONNOUSERSITE": "1",
     "PYTHONUNBUFFERED": "1",
     "TEMPLATEFLOW_HOME": "/templateflow",
-    "UV_USE_IO_URING": "0",
-    "NUMEXPR_MAX_THREADS": "1",
-    "MAMBA_ROOT_PREFIX": "/opt/conda"
+    "UV_USE_IO_URING": "0"
   },
   "inputs": {
     "api-key": {

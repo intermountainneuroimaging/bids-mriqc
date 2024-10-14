@@ -8,6 +8,7 @@
 !fw_gear_bids_mriqc
 !README.md
 !requirements.txt
+!setup
 
 # Re-ignore pycache which might be inside package dir
 **/__pycache__

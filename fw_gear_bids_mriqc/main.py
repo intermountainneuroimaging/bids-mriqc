@@ -39,7 +39,11 @@ def setup_bids_env(gear_context: GearToolkitContext, app_context: BIDSAppContext
                     to download BIDS data.
     """
     # Check for FreeSurfer license, if the algorithm uses it.
-    if find_fs_license:
+    if find_fs_license and hasattr(gear_context, "writable_dir"):
+        # explicitly send to writable directory
+        install_freesurfer_license(gear_context, gear_context.writable_dir)
+    elif find_fs_license:
+        log.debug("Writable_dir not set in gear_context. Installing FS license in usual spot.")
         install_freesurfer_license(gear_context)
 
     tree_title = f"{sanitize_filename(app_context.bids_app_binary)} BIDS Tree"

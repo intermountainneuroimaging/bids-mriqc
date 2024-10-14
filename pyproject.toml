@@ -21,7 +21,7 @@ packages = [
 [tool.poetry.dependencies]
 python = "^3.9"
 flywheel-gear-toolkit = "^0.6"
-flywheel-bids = {git = "https://gitlab.com/flywheel-io/public/bids-client.git", branch = "master", develop=false}
+flywheel-bids = "^1.2.25"
 jsonschema="^4.0"
 
 [tool.poetry.dev-dependencies]

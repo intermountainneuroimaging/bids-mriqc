@@ -1,6 +1,6 @@
 include:
   - project: flywheel-io/tools/etc/qa-ci
-    ref: e5324a0ab1e27f5c579bdf5928b5e5f5ba3961ea
+    ref: 733a34273433aedacf8aa5c56bc08e61e11d4893
     file: ci/gear.yml
 
 variables:
@@ -9,7 +9,3 @@ variables:
   DEBUG: ""  # Set debug mode to print out executed command on qa-ci
   PUBLISH_POETRY: "false"  # Set to true to allow CI to publish package to PYPI
   CACHE_CLEAR: "1"  # Set to true to clear runner cache on gitlab CI
-
-test:gear:
-  # override the extends of test:gear to use a larger runner:
-  extends: [.test:gear, .gitlab-runner-medium]

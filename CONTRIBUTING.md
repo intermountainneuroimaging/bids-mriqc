@@ -9,9 +9,9 @@
 After cloning the repo:
 
 1. Run `poetry install` to install project and all dependencies
-   (see __Dependency management__ below)
+   (see **Dependency management** below)
 2. Run `pre-commit install` to install pre-commit hooks
-   (see __Linting and Testing__ below)
+   (see **Linting and Testing** below)
 
 (If you need to change your python version:)
 
@@ -31,11 +31,11 @@ Dependencies are listed in the `pyproject.toml` file.
 
 #### Managing dependencies
 
-* Adding: Use `poetry add [--dev] <dep>`
-* Removing: Use `poetry remove [--dev] <dep>`
-* Updating: Use `poetry update <dep>` or `poetry update` to update all deps.
-  * Can also not update development dependencies with `--no-dev`
-  * Update dry run: `--gear-dry-run`
+- Adding: Use `poetry add [--dev] <dep>`
+- Removing: Use `poetry remove [--dev] <dep>`
+- Updating: Use `poetry update <dep>` or `poetry update` to update all deps.
+  - Can also not update development dependencies with `--no-dev`
+  - Update dry run: `--gear-dry-run`
 
 #### Using a different version of python
 
@@ -53,9 +53,9 @@ options [Here](https://python-poetry.org/docs/configuration/#available-settings)
 
 List current config: `poetry config --list`
 
-* `poetry config virtualenvs.in-project <true|false|None>`:
+- `poetry config virtualenvs.in-project <true|false|None>`:
   create virtual environment inside project directory
-* `poetry config virtualenvs.path <path>`: Path to virtual environment directory.
+- `poetry config virtualenvs.path <path>`: Path to virtual environment directory.
 
 ## Linting and Testing
 
@@ -64,12 +64,12 @@ are managed through [`pre-commit`](https://pre-commit.com/).
 Pre-commit allows running hooks which can be defined locally, or in other
 repositories. Default hooks to run on each commit:
 
-* gearcheck: Specific check for this gear repo template
-* poetry_export: Export poetry based dependencies to requirements.txt
-* docker-build: Build docker image
-* yamllint: Linter for YAML file
-* ruff: isort and other linting services
-* pytest: Run pytest
+- gearcheck: Specific check for this gear repo template
+- poetry_export: Export poetry based dependencies to requirements.txt
+- docker-build: Build docker image
+- yamllint: Linter for YAML file
+- ruff: isort and other linting services
+- pytest: Run pytest
 
 These hooks will all run automatically on commit, but can also be run manually
 or just be disabled.
@@ -79,14 +79,14 @@ More hooks can be enabled upon need. List of available
 
 ### pre-commit usage
 
-* Run hooks manually:
-  * Run on all files: `pre-commit run -a`
-  * Run on certain files: `pre-commit run --files test/*`
-* Update (e.g. clean and install) hooks: `pre-commit clean && pre-commit install`
-* Disable all hooks: `pre-commit uninstall`
-* Enable all hooks: `pre-commit install`
-* Skip a hook on commit: `SKIP=<hook-name> git commit`
-* Skip all hooks on commit: `git commit --no-verify`
+- Run hooks manually:
+  - Run on all files: `pre-commit run -a`
+  - Run on certain files: `pre-commit run --files test/*`
+- Update (e.g. clean and install) hooks: `pre-commit clean && pre-commit install`
+- Disable all hooks: `pre-commit uninstall`
+- Enable all hooks: `pre-commit install`
+- Skip a hook on commit: `SKIP=<hook-name> git commit`
+- Skip all hooks on commit: `git commit --no-verify`
 
 ## Dockerfile
 
@@ -108,12 +108,13 @@ gear, not the BIDS App algorithm as well.
 
 The gear generally progresses from one section to the next as defined below:
 
-* Section 1: Set up the Docker container with all the env variables, licenses, and BIDS
+- Section 1: Set up the Docker container with all the env variables, licenses, and BIDS
   data.
-  * Configuration options are parsed and stored in the BIDS App Context object.
-      Various parameters needed by the algorithm can be and are populated from there.
 
-* Section 2: Parse the commandline input provided via the config.json under the "
+  - Configuration options are parsed and stored in the BIDS App Context object.
+    Various parameters needed by the algorithm can be and are populated from there.
+
+- Section 2: Parse the commandline input provided via the config.json under the "
   bids_app_command" field. If the BIDS App has idiosyncrasies in the formatting of
   kwargs or required custom fields in the manifest for the config, then the output from
   the standard `generate_command`method (from `flywheel_bids_app_toolkit`) is amended.
@@ -122,20 +123,21 @@ The gear generally progresses from one section to the next as defined below:
   maintainable between versions. As a bonus, much of the testing can be handled within
   flywheel_bids_app_toolkit if this strategy is employed.
 
-* Section 3: Handle dry-runs, BIDS download (not validation) errors, and actual
+- Section 3: Handle dry-runs, BIDS download (not validation) errors, and actual
   algorithm runs.
-  * After parsing the configuration and ensuring that the algorithm command has been
-      cleaned for illegal characters, the MRIQC algorithm will run.
 
-* Section 4: Zip any html, result, or other files so the container can spin down
+  - After parsing the configuration and ensuring that the algorithm command has been
+    cleaned for illegal characters, the MRIQC algorithm will run.
+
+- Section 4: Zip any html, result, or other files so the container can spin down
   gracefully and provide the analysis for review and alternatives use.
-  * Output from the algorithm is collected and parsed to populate metadata and report
-      in the analyses tab. HTML reports from MRIQC can be downloaded individually or in
-      the overall bids_mriqc zip folder.
+  - Output from the algorithm is collected and parsed to populate metadata and report
+    in the analyses tab. HTML reports from MRIQC can be downloaded individually or in
+    the overall bids_mriqc zip folder.
 
 ## A word on post-processing metadata
 
-* Analysis results that are searchable should be placed on the associated file
+- Analysis results that are searchable should be placed on the associated file
   under `file.derived.<meaningful_key>`, where "meaningful_key" is an immutable word
   that makes sense for the app (e.g., "IQM" for BIDS MRIQC). Any further nesting should
   name the keys thoughtfully, so that they will also be meaningful, but immutable (i.e.,

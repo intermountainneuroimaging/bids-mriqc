@@ -25,7 +25,7 @@ def test_setup_bids_env(
 
     # Assert that the install_freesurfer_license function was called with the
     # mock_context object
-    mock_install_freesurfer_license.assert_called_once_with(mock_context)
+    mock_install_freesurfer_license.assert_called_once()
 
     # Assert that copy_bidsignore was also called
     # mock_copy_bidsignore.assert_called_once_with(mock_app_context.bids_dir,

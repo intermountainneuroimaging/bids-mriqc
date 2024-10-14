@@ -4,6 +4,7 @@ BIDS MRIQC: Automatic prediction of quality and visual reporting of MRI scans in
 format
 
 # Update the BIDS algorithm version
+
 1. Fork the repo.
 2. [Update the DockerHub image](https://gitlab.com/flywheel-io/scientific-solutions/gears/bids-apps/bids-mriqc/-/blob/main/Dockerfile?ref_type=heads#L52) that the gear will use.
 3. Update the [gear-builder line](https://gitlab.com/flywheel-io/scientific-solutions/gears/bids-apps/bids-mriqc/-/blob/main/manifest.json?ref_type=heads#L90) in the manifest.
@@ -12,13 +13,13 @@ format
 6. Run `fw-beta gear build` to update anything in the manifest.
 7. Ideally, run `fw-beta gear upload` and complete a test run on your Flywheel instance.
 8. Run `git checkout -b {my-update}`, `git commit -a -m "{My message about updating}" -n`, and `git push`.
-9.  Submit a merge request (MR) to the original gear repo for Flywheel staff to review for official inclusion in the exchange.
+9. Submit a merge request (MR) to the original gear repo for Flywheel staff to review for official inclusion in the exchange.
 
 ## Overview
 
-*{Link To Usage}*
+_{Link To Usage}_
 
-*{Link To FAQ}*
+_{Link To FAQ}_
 
 ### Summary
 
@@ -34,14 +35,14 @@ e0184661; doi:10.1371/journal.pone.0184661
 
 ### License
 
-*License:*
+_License:_
 Other
 
 ### Classification
 
-*Category:* Analysis
+_Category:_ Analysis
 
-*Gear Level:*
+_Gear Level:_
 
 - [x] Project
 - [x] Subject
@@ -49,72 +50,73 @@ Other
 - [x] Acquisition
 - [ ] Analysis
 
-----
+---
 
 [[_TOC_]]
 
-----
+---
 
 ### Inputs
 
 - archived_runs
-    - "Zip file with data or analyses from previous runs (e.g., FreeSurfer archive"
+  - "Zip file with data or analyses from previous runs (e.g., FreeSurfer archive"
 
 ### Config
 
 - bids_app_command
-    - OPTIONAL
-    - __Type__: free-text
-    - The gear will automatically run the defaults for the algorithm if nothing is
-      written in this box (i.e., mriqc bids_dir output_dir participant).
-      If you wish to provide the command as you would on a CLI, input the exact
-      command here. Flywheel will automatically update the BIDS_dir, output_dir, and
-      analysis_level. (e.g., `mriqc bids_dir output participant [arg1 [arg2 ...]]
-      --no-sub`, where kwargs are any combination of kwargs that are valid for MRIQC)
-    - Note: If you use a kwarg here, don't worry about putting a value in the box for
-      the same kwarg below. Any kwarg that you see called out in the config UI and that
-      is given a value will supersede the kwarg:value given as part of the
-      bids_app_command.
-    -
+  - OPTIONAL
+  - **Type**: free-text
+  - The gear will automatically run the defaults for the algorithm if nothing is
+    written in this box (i.e., mriqc bids_dir output_dir participant).
+    If you wish to provide the command as you would on a CLI, input the exact
+    command here. Flywheel will automatically update the BIDS_dir, output_dir, and
+    analysis_level. (e.g., `mriqc bids_dir output participant [arg1 [arg2 ...]]
+--no-sub`, where kwargs are any combination of kwargs that are valid for MRIQC)
+  - Note: If you use a kwarg here, don't worry about putting a value in the box for
+    the same kwarg below. Any kwarg that you see called out in the config UI and that
+    is given a value will supersede the kwarg:value given as part of the
+    bids_app_command.
+  -
 - debug
-    - __Type__: Boolean
-    - __Default__: false
-    - Verbosity of log messages; default results in INFO level, True will log DEBUG
-      level
+
+  - **Type**: Boolean
+  - **Default**: false
+  - Verbosity of log messages; default results in INFO level, True will log DEBUG
+    level
 
 - gear-dry-run
-    - __Type__: Boolean
-    - __Default__: false (set to true for template)
-    - Do everything related to Flywheel except actually execute BIDS App command.
-    - Note: This is NOT the same as running the BIDS app command with `--dry-run`.
-      gear-dry-run will not actually download the BIDS data, attempt to run the BIDS app
-      command, or do any metadata/result updating.
+
+  - **Type**: Boolean
+  - **Default**: false (set to true for template)
+  - Do everything related to Flywheel except actually execute BIDS App command.
+  - Note: This is NOT the same as running the BIDS app command with `--dry-run`.
+    gear-dry-run will not actually download the BIDS data, attempt to run the BIDS app
+    command, or do any metadata/result updating.
 
 - gear-post-processing-only
-    - Requires a previous, successful mriqc analysis/gear run archive file
-    - Don't run the algorithm; just update the metadata and generate reports based off
-      the archived results.
-    - Default is false; the entire BIDS download and algorithm will run
-  
+  - Requires a previous, successful mriqc analysis/gear run archive file
+  - Don't run the algorithm; just update the metadata and generate reports based off
+    the archived results.
+  - Default is false; the entire BIDS download and algorithm will run
 - no-sub
-    - Turn off submission of anonymized quality metrics to MRIQC’s metrics repository
-    - Default reports anonymized metrics
+  - Turn off submission of anonymized quality metrics to MRIQC’s metrics repository
+  - Default reports anonymized metrics
 
 ### Outputs
 
 #### Files
 
-- bids-mriqc*.zip
-    - Contains the htmls for the quality report
-- sub-{label}_ses-{label}*.html.zip
-    - Contains the html quality report for the specific file(s))
+- bids-mriqc\*.zip
+  - Contains the htmls for the quality report
+- sub-{label}\_ses-{label}\*.html.zip
+  - Contains the html quality report for the specific file(s))
 - job.log
-    - Info about what happened on Flywheel
+  - Info about what happened on Flywheel
 - mriqc_log.txt
-    - Nipype's report of the commands that transpired as called by the algorithm
+  - Nipype's report of the commands that transpired as called by the algorithm
 - bids_tree
-    - Report from `export_bids` on Flywheel
-    -
+  - Report from `export_bids` on Flywheel
+  -
 
 #### Metadata
 
@@ -129,8 +131,8 @@ BIDS curation on Flywheel, so that there are entities in file.info.BIDS
 Only curation is a pre-requisite.
 
 1. Run the curate-bids gear.
-    - Run curation for the subject at a minimum. Project-level analyses will need to
-      have had curation run on across all subjects.
+   - Run curation for the subject at a minimum. Project-level analyses will need to
+     have had curation run on across all subjects.
 
 #### Prerequisite Files
 
@@ -178,7 +180,7 @@ graph LR;
     D:::parser --> E((mriqc));
     E:::gear --> F[HTML reports]:::parser;
     E:::gear --> G[IQM metadata]:::parser
-    
+
     classDef parser fill:#57d,color:#fff
     classDef input fill:#7a9,color:#fff
     classDef gear fill:#659,color:#fff
@@ -209,4 +211,5 @@ messages will be reported.
 
 [For more information about how to get started contributing to that gear,
 checkout [CONTRIBUTING.md](CONTRIBUTING.md).]
+
 <!-- markdownlint-disable-file -->

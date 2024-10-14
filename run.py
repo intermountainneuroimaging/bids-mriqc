@@ -2,6 +2,7 @@
 """The run script."""
 
 import logging
+import os
 import sys
 
 from flywheel_bids.flywheel_bids_app_toolkit import BIDSAppContext
@@ -9,13 +10,11 @@ from flywheel_bids.flywheel_bids_app_toolkit import BIDSAppContext
 # This design with the main interfaces separated from a gear module (with main and
 # parser) allows the gear module to be publishable, so it can then be imported in
 # another project, which enables chaining multiple gears together.
-from flywheel_bids.flywheel_bids_app_toolkit.commands import (
-    generate_bids_command,
-    run_bids_algo,
-)
+from flywheel_bids.flywheel_bids_app_toolkit.commands import generate_bids_command, run_bids_algo
+from flywheel_bids.flywheel_bids_app_toolkit.hpc_utils import check_and_link_dirs, remove_tmp_dir
 from flywheel_bids.flywheel_bids_app_toolkit.report import package_output, save_metadata
-from flywheel_bids.flywheel_bids_app_toolkit.utils.query_flywheel import get_fw_details
 from flywheel_bids.flywheel_bids_app_toolkit.utils.helpers import check_bids_dir
+from flywheel_bids.flywheel_bids_app_toolkit.utils.query_flywheel import get_fw_details
 from flywheel_gear_toolkit import GearToolkitContext
 
 from fw_gear_bids_mriqc.main import customize_bids_command, setup_bids_env
@@ -56,6 +55,10 @@ def main(gear_context: GearToolkitContext) -> None:
     app_context = BIDSAppContext(gear_context)
 
     validate_setup(gear_context, app_context)
+
+    # Make sure that all the BIDS app directories are writable (for HPC)
+    # check_and_link_dirs also checks/updates FreeSurfer before setup_bids_env
+    check_and_link_dirs(gear_context)
 
     # Section 1: Set up
     # Collect information related specifically to Flywheel

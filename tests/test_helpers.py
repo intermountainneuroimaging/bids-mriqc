@@ -94,4 +94,4 @@ def test_extra_post_processing(
     mock_app_context.analysis_level = analysis_level
     extra_post_processing(mock_context, mock_app_context)
     assert mock_find.call_count == expected_calls
-    assert mock_store.called_once
+    mock_store.assert_called_once()

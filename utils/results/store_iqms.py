@@ -22,6 +22,8 @@ def find_bids_acqs(context):
     bids_acqs = []
     # TODO figure out how to get the right type that iter_find can operate on, not obj
     for acq in session.acquisitions.iter_find():
+        if "ignore-BIDS" in acq.label:
+            continue
         for f in acq.files:
             if f.info.get("BIDS") and "nii" in f.name:
                 bids_acqs.append(acq)

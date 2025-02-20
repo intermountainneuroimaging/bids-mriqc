@@ -1,37 +1,67 @@
-# Use the latest Python 3 docker image
-FROM nipreps/mriqc:22.0.6
-
-MAINTAINER Flywheel <support@flywheel.io>
-
-# Remove expired LetsEncrypt cert
-#			RUN rm /usr/share/ca-certificates/mozilla/DST_Root_CA_X3.crt && \
-		    RUN update-ca-certificates
-			ENV REQUESTS_CA_BUNDLE "/etc/ssl/certs/ca-certificates.crt"
-
-RUN apt-get update && apt-get install -y zip && rm -rf /var/lib/apt/lists/*
-
-RUN npm install -g bids-validator@1.9.9
-
-COPY requirements.txt /tmp
-RUN pip install -r /tmp/requirements.txt && \
-    rm -rf /root/.cache/pip
-
-# Make directory for flywheel spec (v0)
-ENV FLYWHEEL /flywheel/v0
+# Keep the python at 3.9-slim to integrate well with
+# the mriqc image.
+FROM flywheel/python:3.12-debian AS fw_base
+ENV FLYWHEEL="/flywheel/v0"
 WORKDIR ${FLYWHEEL}
 
-# Save docker environ
-ENV PYTHONUNBUFFERED 1
+# Dev install. git for pip editable install.
+RUN apt-get update && \
+    apt-get upgrade -y && \
+    apt-get clean
+RUN apt-get install --no-install-recommends -y \
+    git \
+    build-essential \
+    zip \
+    nodejs \
+    tree \
+    linux-libc-dev && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
-# Create Flywheel User
-RUN adduser --disabled-password --gecos "Flywheel User" flywheel
-# Copy executable/manifest to Gear
-COPY manifest.json ${FLYWHEEL}/manifest.json
-COPY utils ${FLYWHEEL}/utils
-COPY run.py ${FLYWHEEL}/run.py
-RUN python -c 'import os, json; f = open("/flywheel/v0/gear_environ.json", "w"); json.dump(dict(os.environ), f)'
+RUN python -m venv /opt/flypy
+ENV PATH="/opt/flypy/bin:$PATH"
 
-# Configure entrypoint
-RUN chmod a+x /flywheel/v0/run.py && chown -R flywheel ${FLYWHEEL}
-ENTRYPOINT ["/flywheel/v0/run.py"]
+# Installing main dependencies
+COPY requirements.txt $FLYWHEEL/
 
+# Verified with `which pip` that pip is /opt/flypy/bin/pip
+RUN pip install --no-cache-dir -U pip
+RUN pip install --no-cache-dir -r $FLYWHEEL/requirements.txt
+
+COPY ./ $FLYWHEEL/
+RUN pip install --no-cache-dir .
+
+# Isolate the versions of the dependencies within the BIDS App
+# from the (potentially updated) Flywheel dependencies by copying
+# the venv with the pip installed Flyhweel deps.
+
+# The template BIDS app repo is used for the testing example here.
+### 23.1.0 runs python 3.12
+FROM nipreps/mriqc:24.0.2 as bids_runner
+ENV FLYWHEEL="/flywheel/v0"
+WORKDIR ${FLYWHEEL}
+
+COPY --from=fw_base /usr/local /usr/local
+COPY --from=fw_base /opt/flypy /opt/flypy
+# Update the softlink to point to fw_base's version of python in bids_runner
+RUN ln -sf /usr/local/bin/python3.12 /opt/flypy/bin/python
+
+## Install reprozip
+RUN apt-get update && \
+   apt-get install -y --no-install-recommends  \
+   libsqlite3-dev \
+   libssl-dev \
+   libffi-dev \
+   reprozip && \
+   apt-get clean && \
+   rm -rf /var/lib/apt/lists/*
+#
+## Turn off messaging about anonymous statistic reporting
+RUN reprozip usage_report --disable
+
+# Installing the current project (most likely to change, above layer can be cached)
+COPY ./ $FLYWHEEL/
+#
+## Configure entrypoint
+RUN chmod a+x $FLYWHEEL/run.py
+ENTRYPOINT ["/opt/flypy/bin/python", "/flywheel/v0/run.py"]

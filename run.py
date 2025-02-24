@@ -5,20 +5,21 @@ import logging
 import os
 import sys
 import shutil
-
+import tempfile
+#
 from flywheel_bids.flywheel_bids_app_toolkit import BIDSAppContext
 
 # This design with the main interfaces separated from a gear module (with main and
 # parser) allows the gear module to be publishable, so it can then be imported in
 # another project, which enables chaining multiple gears together.
-from flywheel_bids.flywheel_bids_app_toolkit.commands import generate_bids_command, run_bids_algo
+from flywheel_bids.flywheel_bids_app_toolkit.commands import generate_bids_command
 from flywheel_bids.flywheel_bids_app_toolkit.hpc_utils import check_and_link_dirs, remove_tmp_dir
 from flywheel_bids.flywheel_bids_app_toolkit.report import package_output, save_metadata
 from flywheel_bids.flywheel_bids_app_toolkit.utils.helpers import check_bids_dir
 from flywheel_bids.flywheel_bids_app_toolkit.utils.query_flywheel import get_fw_details
 from flywheel_gear_toolkit import GearToolkitContext
 
-from fw_gear_bids_mriqc.main import customize_bids_command, setup_bids_env
+from fw_gear_bids_mriqc.main import customize_bids_command, setup_bids_env, run_bids_algo
 from fw_gear_bids_mriqc.parser import parse_config, parse_input_files
 from fw_gear_bids_mriqc.utils.dry_run import pretend_it_ran
 from fw_gear_bids_mriqc.utils.helpers import analyze_participants, extra_post_processing, validate_setup
@@ -26,6 +27,7 @@ from fw_gear_bids_mriqc.utils.singularity import run_in_tmp_dir
 
 log = logging.getLogger(__name__)
 
+os.chdir('/flywheel/v0')
 
 def main(gear_context: GearToolkitContext) -> None:
     """Main orchestrating method.
@@ -66,8 +68,8 @@ def main(gear_context: GearToolkitContext) -> None:
     # Collect information related specifically to Flywheel
     destination, gear_builder_info, gear_name_and_version = get_fw_details(gear_context)
 
-    # Setup FreeSurfer, BIDSAppContext, and download BIDS data
-    errors = setup_bids_env(gear_context, app_context)
+    # BIDSAppContext, and download BIDS data, skip freesufer - not required for mriqc
+    errors = setup_bids_env(gear_context, app_context, find_fs_license = False)
     debug, config_options = parse_config(gear_context)
     # If archived runs or other configuration files are allowed in the input tab of
     # the UI, consider using the following method to make the filepaths available to
@@ -133,11 +135,15 @@ def main(gear_context: GearToolkitContext) -> None:
                     )
                     command.extend(["-m", "T1w T2w bold"])
 
+                # matplotlib workaround for multiple runs on same hpc node
+                if 'MPLCONFIGDIR' not in os.environ or os.environ['MPLCONFIGDIR'].startswith('/home'):
+                    os.environ['MPLCONFIGDIR'] = tempfile.mkdtemp(prefix='MPLCONFIGDIR-', dir=app_context.work_dir)
+
                 # Run either the 'participant' or 'group' version of the command
                 # as originally specified by the command.
                 # This will run the group summaries, if 'group', or the participant
                 # analysis, if 'participant'
-                e_code = run_bids_algo(app_context, command)
+                e_code = run_bids_algo(gear_context, app_context, command)
 
             except RuntimeError as exc:
                 e_code = 1

@@ -60,7 +60,7 @@ def parse_input_files(gear_context: GearToolkitContext, app_context: BIDSAppCont
     inputs = gear_context.manifest.get("inputs")
     input_files = defaultdict()
     if inputs:
-        for i in [k for k in inputs.keys() if k not in ["archived_runs"]]:
+        for i in [k for k in inputs.keys() if k not in ["archived_runs","bidsignore"]]:
             if inputs[i]["base"] == "file" and gear_context.get_input_path(i):
                 input_files[i] = gear_context.get_input_path(i)
 

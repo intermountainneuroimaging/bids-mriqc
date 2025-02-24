@@ -49,7 +49,7 @@
       "type": "boolean"
     },
     "no-sub": {
-      "default": false,
+      "default": true,
       "description": "Turn off submission of anonymized quality metrics to MRIQC's metrics repository",
       "type": "boolean"
     },
@@ -132,7 +132,7 @@
     },
     "gear-builder": {
       "category": "analysis",
-      "image": "amhe4269/bids-mriqc:2.1.3_24.0.2_inc0.0rc1"
+      "image": "amhe4269/bids-mriqc:2.1.3_24.0.2_inc0.0rc3"
     },
     "license": {
       "dependencies": [
@@ -205,5 +205,5 @@
   "name": "bids-mriqc",
   "source": "https://github.com/nipreps/mriqc/tree/master",
   "url": "https://gitlab.com/flywheel-io/scientific-solutions/gears/bids-apps/bids-mriqc",
-  "version": "2.1.3_24.0.2_inc0.0rc1"
+  "version": "2.1.3_24.0.2_inc0.0rc3"
 }

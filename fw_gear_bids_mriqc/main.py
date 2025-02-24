@@ -1,8 +1,10 @@
 """Main methods that can be customized to run setup and run the BIDS App."""
 
 import logging
+import os
 import shutil
 from typing import Dict, List, Tuple
+from pathlib import Path
 
 from flywheel_bids.flywheel_bids_app_toolkit import BIDSAppContext
 from flywheel_bids.flywheel_bids_app_toolkit.commands import (
@@ -16,7 +18,7 @@ from flywheel_bids.flywheel_bids_app_toolkit.utils.query_flywheel import (
     copy_bidsignore_file,
 )
 from flywheel_gear_toolkit import GearToolkitContext
-from flywheel_gear_toolkit.interfaces.command_line import build_command_list
+from flywheel_gear_toolkit.interfaces.command_line import build_command_list, exec_command
 from flywheel_gear_toolkit.licenses.freesurfer import install_freesurfer_license
 from flywheel_gear_toolkit.utils.file import sanitize_filename
 
@@ -98,3 +100,43 @@ def customize_bids_command(command: List[str], config_options: Dict) -> List[str
     cmd = clean_generated_bids_command(cmd)
     log.info("UPDATED command is: %s", str(cmd))
     return cmd
+
+
+def run_bids_algo(gear_context: GearToolkitContext, app_context: BIDSAppContext, command: List[str]) -> int:
+    """Run the algorithm.
+
+    Args:
+        app_context (BIDSAppContext): Details about the gear setup and BIDS options
+        command (List): BIDS command that has been updated for Flywheel paths and
+                        parsed to a comma-separated list
+
+    Returns:
+        run_error (int): any error encountered running the app. (0: no error)
+    """
+    if not Path(app_context.analysis_output_dir).exists():
+        # Create output directory
+        log.info("Creating output directory %s", app_context.analysis_output_dir)
+        Path(app_context.analysis_output_dir).mkdir(parents=True, exist_ok=True)
+
+    # This is what it is all about
+    # Turn off logging b/c of log limits and redirect for offline logs
+    # Potentially add "> log_file" to the command to hard force the output to log file.
+    log_file = Path(app_context.output_dir) / Path(
+        app_context.bids_app_binary + "_log.txt"
+    )
+    # GTK requires str not PosixPath for log_file
+    # if log.getEffectiveLevel() == 10:
+    # tee may mess up the nipype output entirely.
+    #     command.extend(["|", "tee", str(log_file)])
+    # else:
+    if gear_context.config.get("gear-log-to-file"):
+        command.extend([">", str(log_file)])
+
+    stdout, stderr, run_error = exec_command(
+        command,
+        dry_run=app_context.gear_dry_run,
+        environ=os.environ,
+        shell=True,
+        cont_output=True,
+    )
+    return run_error

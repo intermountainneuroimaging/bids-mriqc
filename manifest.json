@@ -59,12 +59,12 @@
       "type": "string"
     },
     "slurm-cpu": {
-      "default": "1",
+      "default": "8",
       "description": "[SLURM] How many cpu-cores to request per command/task. This is used for the underlying '--cpus-per-task' option. If not running on HPC, then this flag is ignored",
       "type": "string"
     },
     "slurm-ram": {
-      "default": "12G",
+      "default": "4G",
       "description": "[SLURM] How much RAM to request. This is used for the underlying '--mem-per-cpu' option. If not running on HPC, then this flag is ignored",
       "type": "string"
     },
@@ -104,9 +104,7 @@
     "bids-app-binary": "mriqc",
     "bids-app-data-types": [
       "anat",
-      "func",
-      "dwi",
-      "perf"
+      "func"
     ],
     "flywheel": {
       "classification": {
@@ -132,7 +130,7 @@
     },
     "gear-builder": {
       "category": "analysis",
-      "image": "amhe4269/bids-mriqc:2.1.3_24.0.2_inc0.0rc3"
+      "image": "amhe4269/bids-mriqc:2.1.3_24.0.2_inc0.0rc4"
     },
     "license": {
       "dependencies": [
@@ -205,5 +203,5 @@
   "name": "bids-mriqc",
   "source": "https://github.com/nipreps/mriqc/tree/master",
   "url": "https://gitlab.com/flywheel-io/scientific-solutions/gears/bids-apps/bids-mriqc",
-  "version": "2.1.3_24.0.2_inc0.0rc3"
+  "version": "2.1.3_24.0.2_inc0.0rc4"
 }

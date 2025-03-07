@@ -139,6 +139,9 @@ def main(gear_context: GearToolkitContext) -> None:
                 if 'MPLCONFIGDIR' not in os.environ or os.environ['MPLCONFIGDIR'].startswith('/home'):
                     os.environ['MPLCONFIGDIR'] = tempfile.mkdtemp(prefix='MPLCONFIGDIR-', dir=app_context.work_dir)
 
+                os.environ['SINGULARITYENV_TEMPLATEFLOW_HOME'] = tempfile.mkdtemp(prefix='TEMPLATEFLOW-', dir=app_context.work_dir)
+                os.environ['TEMPLATEFLOW_HOME'] = os.environ['SINGULARITYENV_TEMPLATEFLOW_HOME']
+
                 # Run either the 'participant' or 'group' version of the command
                 # as originally specified by the command.
                 # This will run the group summaries, if 'group', or the participant

@@ -1,6 +1,6 @@
-# Keep the python at 3.9-slim to integrate well with
-# the mriqc image.
-FROM flywheel/python:3.12-debian AS fw_base
+# The template BIDS app repo is used for the testing example here.
+## 23.1.0 runs python 3.12
+FROM nipreps/mriqc:22.0.6
 ENV FLYWHEEL="/flywheel/v0"
 WORKDIR ${FLYWHEEL}
 
@@ -14,6 +14,7 @@ RUN apt-get install --no-install-recommends -y \
     zip \
     nodejs \
     tree \
+    python3-pip \
     linux-libc-dev && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
@@ -25,26 +26,18 @@ ENV PATH="/opt/flypy/bin:$PATH"
 COPY requirements.txt $FLYWHEEL/
 
 # Verified with `which pip` that pip is /opt/flypy/bin/pip
-RUN pip install --no-cache-dir -U pip
+RUN pip install --upgrade pip
 RUN pip install --no-cache-dir -r $FLYWHEEL/requirements.txt
 
+# Installing the current project (most likely to change, above layer can be cached)
 COPY ./ $FLYWHEEL/
+RUN mv $FLYWHEEL/templateflow /templateflow && \
+    chmod -R 777 /templateflow
 RUN pip install --no-cache-dir .
 
-# Isolate the versions of the dependencies within the BIDS App
-# from the (potentially updated) Flywheel dependencies by copying
-# the venv with the pip installed Flyhweel deps.
-
-# The template BIDS app repo is used for the testing example here.
-### 23.1.0 runs python 3.12
-FROM nipreps/mriqc:24.0.2 as bids_runner
-ENV FLYWHEEL="/flywheel/v0"
-WORKDIR ${FLYWHEEL}
-
-COPY --from=fw_base /usr/local /usr/local
-COPY --from=fw_base /opt/flypy /opt/flypy
-# Update the softlink to point to fw_base's version of python in bids_runner
-RUN ln -sf /usr/local/bin/python3.12 /opt/flypy/bin/python
+## add standalone install of templateflow from local download
+# Installing the current project (most likely to change, above layer can be cached)
+ENV TEMPLATEFLOW_HOME="/templateflow"
 
 ### Install reprozip
 #RUN apt-get update && \
@@ -58,9 +51,6 @@ RUN ln -sf /usr/local/bin/python3.12 /opt/flypy/bin/python
 ##
 ### Turn off messaging about anonymous statistic reporting
 #RUN reprozip usage_report --disable
-
-# Installing the current project (most likely to change, above layer can be cached)
-COPY ./ $FLYWHEEL/
 #
 ## Configure entrypoint
 RUN chmod a+x $FLYWHEEL/run.py

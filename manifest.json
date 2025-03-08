@@ -130,7 +130,7 @@
     },
     "gear-builder": {
       "category": "analysis",
-      "image": "amhe4269/bids-mriqc:2.1.3_22.0.6_inc1.0"
+      "image": "amhe4269/bids-mriqc:2.1.3_24.0.2_inc1.0"
     },
     "license": {
       "dependencies": [
@@ -153,7 +153,7 @@
       "non-commercial-use-only": true
     }
   },
-  "description": "(HPC Compatible) MRIQC (22.0.6) extracts no-reference image quality metrics (IQMs) from T1w and T2w structural and functional magnetic resonance imaging data.  For more commandline options, please visit https://mriqc.readthedocs.io/en/latest/running.html. LICENSING NOTE: FSL software are owned by Oxford University Innovation and license is required for any commercial applications. For commercial licence please contact fsl@innovation.ox.ac.uk. For academic use, an academic license is required which is available by registering on the FSL website. Any use of the software requires that the user obtain the appropriate license. See https://fsl.fmrib.ox.ac.uk/fsl/docs/#/license for more information.",
+  "description": "(HPC Compatible) MRIQC (24.0.2) extracts no-reference image quality metrics (IQMs) from T1w and T2w structural and functional magnetic resonance imaging data.  For more commandline options, please visit https://mriqc.readthedocs.io/en/latest/running.html. LICENSING NOTE: FSL software are owned by Oxford University Innovation and license is required for any commercial applications. For commercial licence please contact fsl@innovation.ox.ac.uk. For academic use, an academic license is required which is available by registering on the FSL website. Any use of the software requires that the user obtain the appropriate license. See https://fsl.fmrib.ox.ac.uk/fsl/docs/#/license for more information.",
   "environment": {
     "AFNI_DIR": "/opt/afni",
     "AFNI_IMSAVE_WARNINGS": "NO",
@@ -203,5 +203,5 @@
   "name": "bids-mriqc",
   "source": "https://github.com/nipreps/mriqc/tree/master",
   "url": "https://gitlab.com/flywheel-io/scientific-solutions/gears/bids-apps/bids-mriqc",
-  "version": "2.1.3_22.0.6_inc1.0"
+  "version": "2.1.3_24.0.2_inc1.0"
 }
